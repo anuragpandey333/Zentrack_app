@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Layout from '../components/Layout';
 import AIReportModal from '../components/AIReportModal';
+import BudgetManager from '../components/BudgetManager';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { TrendingUp, Trash2, Sparkles, BarChart3, PieChart as PieChartIcon } from 'lucide-react';
+import { TrendingUp, Trash2, Sparkles, BarChart3, PieChart as PieChartIcon, FileText } from 'lucide-react';
 
 const COLORS = ['#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#ef4444', '#14b8a6', '#f97316'];
 const CATEGORIES = ['Food', 'Transport', 'Shopping', 'Bills', 'Entertainment', 'Health', 'Education', 'Other'];
@@ -192,15 +193,22 @@ const Dashboard = () => {
                             <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                                 <Sparkles className="text-purple-600" /> AI Financial Assistant
                             </h2>
-                            <p className="text-sm text-slate-600 mt-1">Get personalized insights and recommendations</p>
+                            <p className="text-sm text-slate-600 mt-1">Get comprehensive AI-powered financial insights and recommendations</p>
                         </div>
-                        <button 
-                            onClick={handleAnalyze} 
-                            className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-lg hover:from-purple-700 hover:to-pink-700 font-semibold flex items-center gap-2 shadow-lg transition-all transform hover:scale-105"
-                        >
-                            <Sparkles size={18} /> View Report
-                        </button>
+                        <div className="flex gap-3">
+                            <button 
+                                onClick={() => navigate('/reports')} 
+                                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-lg hover:from-purple-700 hover:to-pink-700 font-semibold flex items-center gap-2 shadow-lg transition-all transform hover:scale-105"
+                            >
+                                <FileText size={18} /> View Full Report
+                            </button>
+                        </div>
                     </div>
+                </div>
+
+                {/* Budget Manager */}
+                <div className="mb-6">
+                    <BudgetManager />
                 </div>
 
                 {/* Recent Expenses */}
