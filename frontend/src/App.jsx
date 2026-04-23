@@ -6,6 +6,7 @@ const Login = lazy(() => import('./pages/Login'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Transactions = lazy(() => import('./pages/Transactions'));
 const Reports = lazy(() => import('./pages/Reports'));
+const Profile = lazy(() => import('./pages/Profile'));
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/transactions" element={<Transactions />} />
           <Route path="/reports" element={<Reports />} />
+          <Route path="/profile" element={<Profile />} />
         </Routes>
       </Suspense>
     </BrowserRouter>

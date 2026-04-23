@@ -58,6 +58,32 @@ export const loginUser = async (req, res) => {
     }
 };
 
+export const getProfile = async (req, res) => {
+    try {
+        const user = await prisma.user.findUnique({ 
+            where: { id: req.user.id },
+            select: { id: true, name: true, email: true, bio: true, hobbies: true }
+        });
+        res.json(user);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const updateProfile = async (req, res) => {
+    const { name, email, bio, hobbies } = req.body;
+    try {
+        const user = await prisma.user.update({
+            where: { id: req.user.id },
+            data: { name, email, bio, hobbies },
+            select: { id: true, name: true, email: true, bio: true, hobbies: true }
+        });
+        res.json(user);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 export const googleAuth = async (req, res) => {
     const { credential } = req.body;
     try {

@@ -2,10 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Layout from '../components/Layout';
-import AIReportModal from '../components/AIReportModal';
-import BudgetManager from '../components/BudgetManager';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { TrendingUp, Trash2, Sparkles, BarChart3, PieChart as PieChartIcon, FileText } from 'lucide-react';
+import { TrendingUp, TrendingDown, Trash2, Sparkles, BarChart3, PieChart as PieChartIcon, FileText, DollarSign, Calendar, Target } from 'lucide-react';
 
 const COLORS = ['#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#ef4444', '#14b8a6', '#f97316'];
 const CATEGORIES = ['Food', 'Transport', 'Shopping', 'Bills', 'Entertainment', 'Health', 'Education', 'Other'];
@@ -17,8 +15,6 @@ const Dashboard = () => {
     const [monthlyBudget, setMonthlyBudget] = useState('');
     const [form, setForm] = useState({ description: '', amount: '', category: 'Food', date: new Date().toISOString().split('T')[0] });
     const [chartType, setChartType] = useState('bar');
-    const [aiReport, setAiReport] = useState(null);
-    const [loading, setLoading] = useState(false);
     const [showReportModal, setShowReportModal] = useState(false);
 
     const token = localStorage.getItem('token');
@@ -73,8 +69,8 @@ const Dashboard = () => {
         }
     };
 
-    const handleAnalyze = async () => {
-        setShowReportModal(true);
+    const handleAnalyze = () => {
+        navigate('/reports');
     };
 
     const totalSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
@@ -95,42 +91,86 @@ const Dashboard = () => {
     return (
         <Layout>
             <div className="max-w-7xl mx-auto">
-                <h1 className="text-3xl font-bold text-slate-800 mb-8">💰 Expense Tracker</h1>
-
-                {/* Add Expense Form */}
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-6">
-                    <h2 className="text-xl font-bold text-slate-800 mb-4">Add Expense</h2>
-                    <form onSubmit={handleAddExpense} className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                        <input type="text" placeholder="Description" value={form.description} onChange={e => setForm({...form, description: e.target.value})} className="px-4 py-2 border rounded-lg" required />
-                        <input type="number" placeholder="Amount" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} className="px-4 py-2 border rounded-lg" required />
-                        <select value={form.category} onChange={e => setForm({...form, category: e.target.value})} className="px-4 py-2 border rounded-lg">
-                            {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                        </select>
-                        <input type="date" value={form.date} onChange={e => setForm({...form, date: e.target.value})} className="px-4 py-2 border rounded-lg" />
-                        <button type="submit" className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 font-semibold">Add</button>
-                    </form>
+                {/* Header */}
+                <div className="mb-8">
+                    <h1 className="text-3xl font-bold text-slate-800">Dashboard</h1>
+                    <p className="text-slate-600 mt-2">Track your expenses and manage your budget</p>
                 </div>
 
-                {/* Budget & Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-                    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-                        <p className="text-sm text-slate-500 mb-2">Monthly Budget</p>
+                {/* Stats Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    {/* Monthly Budget Card */}
+                    <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-6 text-white shadow-lg">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="p-3 bg-white/20 rounded-xl">
+                                <DollarSign size={24} />
+                            </div>
+                        </div>
+                        <p className="text-purple-100 text-sm mb-1">Monthly Budget</p>
+                        <h3 className="text-3xl font-bold mb-3">₹{budget.toFixed(2)}</h3>
                         <div className="flex gap-2">
-                            <input type="number" value={monthlyBudget} onChange={e => setMonthlyBudget(e.target.value)} className="px-3 py-1 border rounded-lg w-full" placeholder="Set budget" />
-                            <button onClick={handleBudgetUpdate} className="bg-slate-800 text-white px-4 py-1 rounded-lg text-sm">Set</button>
+                            <input 
+                                type="number" 
+                                value={monthlyBudget} 
+                                onChange={e => setMonthlyBudget(e.target.value)} 
+                                className="flex-1 px-3 py-2 bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/60 outline-none focus:bg-white/30" 
+                                placeholder="Set budget" 
+                            />
+                            <button 
+                                onClick={handleBudgetUpdate} 
+                                className="px-4 py-2 bg-white text-purple-600 rounded-lg font-semibold hover:bg-purple-50 transition"
+                            >
+                                Set
+                            </button>
                         </div>
                     </div>
-                    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-                        <p className="text-sm text-slate-500 mb-2">Total Spent</p>
-                        <h3 className="text-2xl font-bold text-slate-800">₹{totalSpent.toFixed(2)}</h3>
+
+                    {/* Total Spent Card */}
+                    <div className="bg-gradient-to-br from-pink-500 to-pink-600 rounded-2xl p-6 text-white shadow-lg">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="p-3 bg-white/20 rounded-xl">
+                                <TrendingDown size={24} />
+                            </div>
+                        </div>
+                        <p className="text-pink-100 text-sm mb-1">Total Spent</p>
+                        <h3 className="text-3xl font-bold">₹{totalSpent.toFixed(2)}</h3>
+                        <p className="text-pink-100 text-sm mt-2">{expenses.length} transactions</p>
                     </div>
-                    <div className={`bg-white rounded-2xl shadow-sm border border-slate-100 p-6 ${remaining < 0 ? 'border-red-500' : ''}`}>
-                        <p className="text-sm text-slate-500 mb-2">Remaining</p>
-                        <h3 className={`text-2xl font-bold ${remaining < 0 ? 'text-red-600' : 'text-green-600'}`}>₹{remaining.toFixed(2)}</h3>
+
+                    {/* Remaining Card */}
+                    <div className={`bg-gradient-to-br rounded-2xl p-6 text-white shadow-lg ${
+                        remaining < 0 
+                            ? 'from-red-500 to-red-600' 
+                            : 'from-green-500 to-green-600'
+                    }`}>
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="p-3 bg-white/20 rounded-xl">
+                                <Target size={24} />
+                            </div>
+                        </div>
+                        <p className={`text-sm mb-1 ${
+                            remaining < 0 ? 'text-red-100' : 'text-green-100'
+                        }`}>
+                            {remaining < 0 ? 'Over Budget' : 'Remaining'}
+                        </p>
+                        <h3 className="text-3xl font-bold">₹{Math.abs(remaining).toFixed(2)}</h3>
+                        <p className={`text-sm mt-2 ${
+                            remaining < 0 ? 'text-red-100' : 'text-green-100'
+                        }`}>
+                            {remaining < 0 ? 'Reduce spending' : 'Keep it up!'}
+                        </p>
                     </div>
-                    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-                        <p className="text-sm text-slate-500 mb-2">Largest Expense</p>
-                        <h3 className="text-2xl font-bold text-slate-800">₹{largestExpense.toFixed(2)}</h3>
+
+                    {/* Largest Expense Card */}
+                    <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 text-white shadow-lg">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="p-3 bg-white/20 rounded-xl">
+                                <Calendar size={24} />
+                            </div>
+                        </div>
+                        <p className="text-blue-100 text-sm mb-1">Largest Expense</p>
+                        <h3 className="text-3xl font-bold">₹{largestExpense.toFixed(2)}</h3>
+                        <p className="text-blue-100 text-sm mt-2">This month</p>
                     </div>
                 </div>
 
@@ -186,29 +226,29 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                {/* AI Analysis */}
-                <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl shadow-sm border border-purple-100 p-6 mb-6">
-                    <div className="flex justify-between items-center">
-                        <div>
-                            <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                                <Sparkles className="text-purple-600" /> AI Financial Assistant
+                {/* AI Financial Assistant */}
+                <div className="bg-gradient-to-r from-purple-50 via-pink-50 to-purple-50 rounded-2xl shadow-sm border border-purple-200 p-8 mb-8">
+                    <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+                        <div className="flex-1">
+                            <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-3 mb-3">
+                                <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl">
+                                    <Sparkles className="text-white" size={24} />
+                                </div>
+                                AI Financial Assistant
                             </h2>
-                            <p className="text-sm text-slate-600 mt-1">Get comprehensive AI-powered financial insights and recommendations</p>
+                            <p className="text-slate-600 leading-relaxed">
+                                Get comprehensive AI-powered financial insights, spending pattern analysis, 
+                                personalized recommendations, and budget optimization advice.
+                            </p>
                         </div>
-                        <div className="flex gap-3">
-                            <button 
-                                onClick={() => navigate('/reports')} 
-                                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-lg hover:from-purple-700 hover:to-pink-700 font-semibold flex items-center gap-2 shadow-lg transition-all transform hover:scale-105"
-                            >
-                                <FileText size={18} /> View Full Report
-                            </button>
-                        </div>
+                        <button 
+                            onClick={() => navigate('/reports')} 
+                            className="flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 font-semibold shadow-lg transition-all transform hover:scale-105"
+                        >
+                            <FileText size={20} />
+                            View Full Report
+                        </button>
                     </div>
-                </div>
-
-                {/* Budget Manager */}
-                <div className="mb-6">
-                    <BudgetManager />
                 </div>
 
                 {/* Recent Expenses */}
@@ -231,15 +271,6 @@ const Dashboard = () => {
                         ))}
                     </div>
                 </div>
-
-                {/* AI Report Modal */}
-                <AIReportModal 
-                    isOpen={showReportModal}
-                    onClose={() => setShowReportModal(false)}
-                    reportData={aiReport}
-                    expenses={expenses}
-                    budget={budget}
-                />
             </div>
         </Layout>
     );
