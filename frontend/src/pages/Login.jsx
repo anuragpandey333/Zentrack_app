@@ -52,7 +52,7 @@ const Login = () => {
         <div className="min-h-screen flex flex-col bg-white font-sans">
             {/* Top Bar matching screenshot */}
             <header className="w-full bg-brand-dark py-4 shadow-sm z-10 text-center">
-                <h1 className="text-2xl font-bold text-white tracking-wide">Expense Tracker App</h1>
+                <h1 className="text-2xl font-bold text-white tracking-wide">ZENTRACK </h1>
             </header>
 
             {/* Main content split */}

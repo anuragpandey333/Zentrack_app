@@ -6,6 +6,8 @@ dotenv.config();
 
 import authRoutes from './routes/auth.js';
 import transactionRoutes from './routes/transactions.js';
+import budgetRoutes from './routes/budget.js';
+import aiRoutes from './routes/ai.js';
 
 const app=express();
 const PORT=process.env.PORT || 8000;
@@ -21,6 +23,8 @@ app.use(express.urlencoded({extended:false}));
 // routes
 app.use('/api/auth', authRoutes);
 app.use('/api/transactions', transactionRoutes);
+app.use('/api/budget', budgetRoutes);
+app.use('/api/ai', aiRoutes);
 
 app.get('/',(req,res)=>{
     res.send("Zentrack API is running...");
