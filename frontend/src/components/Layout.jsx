@@ -1,79 +1,84 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, FileText, List, LogOut, User, Sparkles } from 'lucide-react';
+import { LayoutDashboard, List, LogOut, PieChart, Settings, Wallet, ArrowLeftRight } from 'lucide-react';
+import { useUser } from '../context/UserContext';
+import Avatar from './Avatar';
 
 const Layout = ({ children }) => {
     const location = useLocation();
     const navigate = useNavigate();
-    const userStr = localStorage.getItem('user');
-    const user = userStr ? JSON.parse(userStr) : null;
+    const { user, logout } = useUser();
 
     const handleLogout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        logout();
         navigate('/login');
     };
 
     const navItems = [
-        { path: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
-        { path: '/transactions', label: 'Transactions', icon: <List size={20} /> },
-        { path: '/reports', label: 'AI Reports', icon: <Sparkles size={20} /> },
-        { path: '/profile', label: 'Profile', icon: <User size={20} /> },
+        { path: '/dashboard', label: 'Overview', icon: <LayoutDashboard size={20} /> },
+        { path: '/transactions', label: 'Transactions', icon: <ArrowLeftRight size={20} /> },
+        { path: '/budgets', label: 'Budgets', icon: <PieChart size={20} /> },
+        { path: '/reports', label: 'Analytics', icon: <List size={20} /> },
+        { path: '/settings', label: 'Settings', icon: <Settings size={20} /> },
     ];
 
     return (
-        <div className="flex h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="flex h-screen bg-slate-50 font-sans text-slate-800">
             {/* Sidebar */}
-            <div className="w-72 bg-gradient-to-b from-slate-900 to-slate-800 text-white flex flex-col shadow-2xl">
-                <div className="h-24 flex items-center justify-center border-b border-white/10 shrink-0 px-6">
-                    <div className="flex items-center space-x-3">
-                        <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center overflow-hidden border-2 border-white/20 shadow-lg">
-                            {user?.picture ? (
-                                <img src={user.picture} alt="Profile" className="w-full h-full object-cover" />
-                            ) : (
-                                <User size={24} />
-                            )}
+            <div className="w-64 bg-white border-r border-slate-200 flex flex-col z-10">
+                <div className="h-24 flex items-center px-8 border-b border-transparent shrink-0">
+                    <div className="flex items-center gap-3">
+                        <div className="bg-black text-white p-1.5 rounded-lg">
+                            <Wallet size={20} />
                         </div>
-                        <div className="flex-1 min-w-0">
-                            <h1 className="font-bold text-lg tracking-wide truncate">{user?.name || 'User'}</h1>
-                            <p className="text-xs text-slate-400 truncate">{user?.email}</p>
-                        </div>
+                        <h1 className="font-bold text-xl tracking-tight text-black">Cashflow</h1>
                     </div>
                 </div>
 
-                <nav className="flex-1 py-8 space-y-2 px-4">
-                    {navItems.map((item) => (
-                        <Link
-                            key={item.path}
-                            to={item.path}
-                            className={`flex items-center space-x-3 px-5 py-3.5 rounded-xl transition-all duration-200 group ${
-                                location.pathname.startsWith(item.path)
-                                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                                    : 'text-slate-300 hover:text-white hover:bg-white/10'
-                            }`}
-                        >
-                            <span className={location.pathname.startsWith(item.path) ? '' : 'group-hover:scale-110 transition-transform'}>
-                                {item.icon}
-                            </span>
-                            <span className="font-medium">{item.label}</span>
-                        </Link>
-                    ))}
+                <nav className="flex-1 py-4 px-4 space-y-1">
+                    {navItems.map((item) => {
+                        const isActive = location.pathname.startsWith(item.path);
+                        return (
+                            <Link
+                                key={item.path}
+                                to={item.path}
+                                className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-[15px] font-medium transition-colors ${
+                                    isActive
+                                        ? 'bg-slate-100 text-black'
+                                        : 'text-slate-500 hover:text-black hover:bg-slate-50'
+                                }`}
+                            >
+                                <span className={isActive ? 'text-black' : 'text-slate-400'}>
+                                    {item.icon}
+                                </span>
+                                <span>{item.label}</span>
+                            </Link>
+                        );
+                    })}
                 </nav>
 
-                <div className="p-4 border-t border-white/10 shrink-0">
+                {/* User Profile Section */}
+                <div className="p-4 border-t border-slate-100">
+                    <Link to="/settings" className="flex items-center space-x-3 p-3 rounded-xl hover:bg-slate-50 transition-colors mb-2">
+                        <Avatar src={user?.picture} alt={user?.name} size="md" />
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-slate-800 truncate">{user?.name || 'User'}</p>
+                            <p className="text-xs text-slate-500 truncate">{user?.email}</p>
+                        </div>
+                    </Link>
                     <button
                         onClick={handleLogout}
-                        className="flex items-center space-x-3 text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all w-full px-5 py-3 rounded-xl group"
+                        className="flex items-center space-x-3 text-slate-500 hover:text-black hover:bg-slate-50 transition-colors w-full px-4 py-3 rounded-xl text-[15px] font-medium"
                     >
-                        <LogOut size={20} className="group-hover:scale-110 transition-transform" />
-                        <span className="font-medium">Logout</span>
+                        <LogOut size={20} className="text-slate-400" />
+                        <span>Log out</span>
                     </button>
                 </div>
             </div>
 
             {/* Main Content */}
-            <div className="flex-1 overflow-auto">
-                <div className="max-w-7xl mx-auto py-8 px-8">
+            <div className="flex-1 overflow-auto bg-slate-50">
+                <div className="w-full py-8 px-10">
                     {children}
                 </div>
             </div>
@@ -82,3 +87,4 @@ const Layout = ({ children }) => {
 };
 
 export default Layout;
+

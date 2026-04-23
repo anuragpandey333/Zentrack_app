@@ -16,6 +16,7 @@ model User {
   picture      String?
   bio          String?       @default("")
   hobbies      String?       @default("")
+  currency     String?       @default("USD")
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   transactions Transaction[]
