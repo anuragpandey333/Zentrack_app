@@ -21,8 +21,6 @@ const Transactions = () => {
 
     useEffect(() => {
         fetchTransactions();
-        const interval = setInterval(fetchTransactions, 5000); // Polling for "live" feel
-        return () => clearInterval(interval);
     }, []);
 
     const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -31,11 +29,14 @@ const Transactions = () => {
         e.preventDefault();
         try {
             const token = localStorage.getItem('token');
-            await axios.post('http://localhost:8000/api/transactions', formData, {
+            await axios.post('http://localhost:8000/api/transactions', {
+                ...formData,
+                amount: parseFloat(formData.amount)
+            }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setFormData({ type: 'debit', amount: '', category: '', description: '' });
-            fetchTransactions(); // Immediately refresh
+            fetchTransactions();
         } catch (error) {
             console.error(error);
         }
@@ -139,7 +140,7 @@ const Transactions = () => {
                                 </thead>
                                 <tbody>
                                     {transactions.length > 0 ? transactions.map((t) => (
-                                        <tr key={t._id} className="border-b border-slate-50 hover:bg-slate-50/50 transition">
+                                        <tr key={t.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition">
                                             <td className="py-4 px-6 text-sm text-slate-600">
                                                 {new Date(t.date).toLocaleDateString()}
                                             </td>
@@ -153,7 +154,7 @@ const Transactions = () => {
                                                 {t.type === 'credit' ? '+' : '-'}₹{t.amount?.toLocaleString()}
                                             </td>
                                             <td className="py-4 px-6 text-sm text-center">
-                                                <button onClick={() => handleDelete(t._id)} className="text-slate-400 hover:text-red-500 transition">
+                                                <button onClick={() => handleDelete(t.id)} className="text-slate-400 hover:text-red-500 transition">
                                                     <Trash2 size={18} className="mx-auto" />
                                                 </button>
                                             </td>

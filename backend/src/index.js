@@ -10,13 +10,7 @@ import transactionRoutes from './routes/transactions.js';
 const app=express();
 const PORT=process.env.PORT || 8000;
 
-// database connection
-import mongoose from 'mongoose';
-mongoose.connect(process.env.DB_URL).then(()=>{
-    console.log("Database connected successfully");
-}).catch((err)=>{
-    console.log("Database not conected",err);
-});
+// Prisma connects lazily on first query
 
 // app level middleware
 app.use(cors());

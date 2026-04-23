@@ -69,9 +69,6 @@ const Dashboard = () => {
         };
 
         fetchData();
-        // Setup simple polling for "live" feel
-        const interval = setInterval(fetchData, 5000);
-        return () => clearInterval(interval);
     }, [navigate]);
 
     return (
@@ -120,8 +117,8 @@ const Dashboard = () => {
                     <h2 className="text-lg font-bold text-slate-800">Daily Transaction Summary (Last 30 Days)</h2>
                 </div>
 
-                <div className="h-80 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
+                <div className="h-80 w-full" style={{ minHeight: 320 }}>
+                    <ResponsiveContainer width="100%" height={320}>
                         <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                             <defs>
                                 <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">

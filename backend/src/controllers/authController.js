@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import { OAuth2Client } from 'google-auth-library';
-import { User } from '../models/User.js';
+import prisma from '../lib/prisma.js';
 
 const client = new OAuth2Client();
 
@@ -14,27 +14,26 @@ const generateToken = (id) => {
 export const registerUser = async (req, res) => {
     const { name, email, password } = req.body;
     try {
-        const userExists = await User.findOne({ email });
+        if (!name || !email || !password) {
+            return res.status(400).json({ message: 'All fields are required' });
+        }
+        if (password.length < 6) {
+            return res.status(400).json({ message: 'Password must be at least 6 characters' });
+        }
+        const userExists = await prisma.user.findUnique({ where: { email } });
         if (userExists) {
             return res.status(400).json({ message: 'User already exists' });
         }
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-
-        const user = await User.create({
-            name,
-            email,
-            password: hashedPassword
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const user = await prisma.user.create({
+            data: { name, email, password: hashedPassword }
         });
-
-        if (user) {
-            res.status(201).json({
-                _id: user._id,
-                name: user.name,
-                email: user.email,
-                token: generateToken(user._id),
-            });
-        }
+        res.status(201).json({
+            _id: user.id,
+            name: user.name,
+            email: user.email,
+            token: generateToken(user.id),
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -43,13 +42,13 @@ export const registerUser = async (req, res) => {
 export const loginUser = async (req, res) => {
     const { email, password } = req.body;
     try {
-        const user = await User.findOne({ email });
+        const user = await prisma.user.findUnique({ where: { email } });
         if (user && user.password && (await bcrypt.compare(password, user.password))) {
             res.json({
-                _id: user._id,
+                _id: user.id,
                 name: user.name,
                 email: user.email,
-                token: generateToken(user._id),
+                token: generateToken(user.id),
             });
         } else {
             res.status(401).json({ message: 'Invalid email or password' });
@@ -64,28 +63,22 @@ export const googleAuth = async (req, res) => {
     try {
         const ticket = await client.verifyIdToken({
             idToken: credential,
-            audience: process.env.GOOGLE_CLIENT_ID, 
+            audience: process.env.GOOGLE_CLIENT_ID,
         });
-        const payload = ticket.getPayload();
-        
-        const { sub, name, email, picture } = payload;
-        
-        let user = await User.findOne({ email });
+        const { sub, name, email, picture } = ticket.getPayload();
+
+        let user = await prisma.user.findUnique({ where: { email } });
         if (!user) {
-            user = await User.create({
-                name,
-                email,
-                googleId: sub,
-                picture
+            user = await prisma.user.create({
+                data: { name, email, googleId: sub, picture }
             });
         }
-        
         res.json({
-            _id: user._id,
+            _id: user.id,
             name: user.name,
             email: user.email,
             picture: user.picture,
-            token: generateToken(user._id),
+            token: generateToken(user.id),
         });
     } catch (error) {
         res.status(500).json({ message: error.message });

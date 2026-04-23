@@ -1,8 +1,11 @@
-import { Transaction } from '../models/Transaction.js';
+import prisma from '../lib/prisma.js';
 
 export const getTransactions = async (req, res) => {
     try {
-        const transactions = await Transaction.find({ userId: req.user.id }).sort({ date: -1 });
+        const transactions = await prisma.transaction.findMany({
+            where: { userId: req.user.id },
+            orderBy: { date: 'desc' }
+        });
         res.json(transactions);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -12,13 +15,15 @@ export const getTransactions = async (req, res) => {
 export const addTransaction = async (req, res) => {
     const { type, amount, category, description, date } = req.body;
     try {
-        const transaction = await Transaction.create({
-            userId: req.user.id,
-            type,
-            amount,
-            category,
-            description,
-            date: date || Date.now()
+        const transaction = await prisma.transaction.create({
+            data: {
+                userId: req.user.id,
+                type,
+                amount,
+                category,
+                description,
+                date: date ? new Date(date) : new Date()
+            }
         });
         res.status(201).json(transaction);
     } catch (error) {
@@ -28,9 +33,9 @@ export const addTransaction = async (req, res) => {
 
 export const deleteTransaction = async (req, res) => {
     try {
-        const transaction = await Transaction.findById(req.params.id);
-        if (transaction && transaction.userId.toString() === req.user.id) {
-            await transaction.deleteOne();
+        const transaction = await prisma.transaction.findUnique({ where: { id: req.params.id } });
+        if (transaction && transaction.userId === req.user.id) {
+            await prisma.transaction.delete({ where: { id: req.params.id } });
             res.json({ message: 'Transaction removed' });
         } else {
             res.status(404).json({ message: 'Transaction not found or not authorized' });
@@ -42,17 +47,14 @@ export const deleteTransaction = async (req, res) => {
 
 export const getDashboardSummary = async (req, res) => {
     try {
-        const transactions = await Transaction.find({ userId: req.user.id });
-        const totalTransactions = transactions.length;
-        const totalCredit = transactions.filter(t => t.type === 'credit').reduce((acc, curr) => acc + curr.amount, 0);
-        const totalDebit = transactions.filter(t => t.type === 'debit').reduce((acc, curr) => acc + curr.amount, 0);
-        const balance = totalCredit - totalDebit;
-
+        const transactions = await prisma.transaction.findMany({ where: { userId: req.user.id } });
+        const totalCredit = transactions.filter(t => t.type === 'credit').reduce((acc, t) => acc + t.amount, 0);
+        const totalDebit = transactions.filter(t => t.type === 'debit').reduce((acc, t) => acc + t.amount, 0);
         res.json({
-            count: totalTransactions,
+            count: transactions.length,
             totalCredit,
             totalDebit,
-            balance
+            balance: totalCredit - totalDebit
         });
     } catch (error) {
         res.status(500).json({ message: error.message });

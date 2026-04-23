@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { User, Lock, Eye, EyeOff } from 'lucide-react';
 
 const Login = () => {
+    const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isRegister, setIsRegister] = useState(false);
@@ -26,10 +27,16 @@ const Login = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        
+        if (isRegister && password.length < 6) {
+            setError('Password must be at least 6 characters');
+            return;
+        }
+        
         const endpoint = isRegister ? 'register' : 'login';
         try {
             const { data } = await axios.post(`http://localhost:8000/api/auth/${endpoint}`, {
-                name: isRegister ? email.split('@')[0] : undefined,
+                name: isRegister ? name : undefined,
                 email,
                 password
             });
@@ -73,22 +80,43 @@ const Login = () => {
                         {error && <div className="bg-red-50 text-red-500 p-3 rounded-lg mb-4 text-sm text-center">{error}</div>}
 
                         <form onSubmit={handleSubmit} className="space-y-6">
+                            {isRegister && (
+                                <div>
+                                    <label className="block text-sm font-medium text-brand-dark mb-1">
+                                        <span className="text-brand-primary mr-1">*</span>
+                                        Name
+                                    </label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <User className="h-5 w-5 text-brand-primary" />
+                                        </div>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={name}
+                                            onChange={(e) => setName(e.target.value)}
+                                            className="block w-full pl-10 pr-3 py-2.5 border border-[#c4dbf6] rounded-md focus:ring-1 focus:ring-brand-primary focus:border-brand-primary outline-none transition bg-brand-bg"
+                                            placeholder="Your name"
+                                        />
+                                    </div>
+                                </div>
+                            )}
                             <div>
                                 <label className="block text-sm font-medium text-brand-dark mb-1">
                                     <span className="text-brand-primary mr-1">*</span>
-                                    {isRegister ? "Email" : "Username"}
+                                    Email
                                 </label>
                                 <div className="relative">
                                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                         <User className="h-5 w-5 text-brand-primary" />
                                     </div>
                                     <input
-                                        type={isRegister ? "email" : "text"}
+                                        type="email"
                                         required
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         className="block w-full pl-10 pr-3 py-2.5 border border-[#c4dbf6] rounded-md focus:ring-1 focus:ring-brand-primary focus:border-brand-primary outline-none transition bg-brand-bg"
-                                        placeholder={isRegister ? "you@example.com" : "justforcodeservice@gmail.com"}
+                                        placeholder="you@example.com"
                                     />
                                 </div>
                             </div>
@@ -96,7 +124,7 @@ const Login = () => {
                             <div>
                                 <label className="block text-sm font-medium text-brand-dark mb-1">
                                     <span className="text-brand-primary mr-1">*</span>
-                                    Password
+                                    Password {isRegister && <span className="text-xs text-slate-500">(min 6 characters)</span>}
                                 </label>
                                 <div className="relative">
                                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -105,6 +133,7 @@ const Login = () => {
                                     <input
                                         type={showPassword ? "text" : "password"}
                                         required
+                                        minLength={isRegister ? 6 : undefined}
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         className="block w-full pl-10 pr-10 py-2.5 border border-[#c4dbf6] rounded-md focus:ring-1 focus:ring-brand-primary focus:border-brand-primary outline-none transition bg-brand-bg"
@@ -128,10 +157,7 @@ const Login = () => {
                             </button>
                         </form>
 
-                        <div className="mt-6 flex justify-between items-center text-sm font-medium">
-                            <button className="text-brand-primary hover:text-brand-dark transition">
-                                Forgot Password?
-                            </button>
+                        <div className="mt-6 flex justify-end items-center text-sm font-medium">
                             <button
                                 onClick={() => setIsRegister(!isRegister)}
                                 className="text-brand-primary hover:text-brand-dark transition"
