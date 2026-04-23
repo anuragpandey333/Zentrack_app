@@ -1,7 +1,48 @@
-import Anthropic from '@anthropic-ai/sdk';
+import axios from 'axios';
 import prisma from '../lib/prisma.js';
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const GROK_API_URL = 'https://api.x.ai/v1/chat/completions';
+const GROK_API_KEY = process.env.GROK_API_KEY;
+
+const callGrokAPI = async (prompt) => {
+    try {
+        const response = await axios.post(
+            GROK_API_URL,
+            {
+                messages: [
+                    {
+                        role: 'system',
+                        content: 'You are a professional financial advisor. Provide concise, actionable financial advice in JSON format.'
+                    },
+                    {
+                        role: 'user',
+                        content: prompt
+                    }
+                ],
+                model: 'grok-beta',
+                stream: false,
+                temperature: 0.7
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${GROK_API_KEY}`
+                }
+            }
+        );
+        
+        const content = response.data.choices[0].message.content;
+        // Extract JSON from response (handle markdown code blocks)
+        const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/) || content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            return JSON.parse(jsonMatch[1] || jsonMatch[0]);
+        }
+        return JSON.parse(content);
+    } catch (error) {
+        console.error('Grok API Error:', error.response?.data || error.message);
+        throw error;
+    }
+};
 
 export const analyzeFinances = async (req, res) => {
     try {
@@ -45,13 +86,7 @@ Format as JSON:
 
 Be specific, practical, and encouraging. Focus on concrete actions they can take.`;
 
-        const message = await anthropic.messages.create({
-            model: 'claude-3-5-sonnet-20241022',
-            max_tokens: 1024,
-            messages: [{ role: 'user', content: prompt }]
-        });
-
-        const response = JSON.parse(message.content[0].text);
+        const response = await callGrokAPI(prompt);
         res.json({
             ...response,
             metadata: {

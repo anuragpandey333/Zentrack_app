@@ -1,7 +1,48 @@
 import prisma from '../lib/prisma.js';
-import Anthropic from '@anthropic-ai/sdk';
+import axios from 'axios';
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const GROK_API_URL = 'https://api.x.ai/v1/chat/completions';
+const GROK_API_KEY = process.env.GROK_API_KEY;
+
+const callGrokAPI = async (prompt) => {
+    try {
+        const response = await axios.post(
+            GROK_API_URL,
+            {
+                messages: [
+                    {
+                        role: 'system',
+                        content: 'You are a professional financial advisor. Provide detailed, actionable financial advice in JSON format.'
+                    },
+                    {
+                        role: 'user',
+                        content: prompt
+                    }
+                ],
+                model: 'grok-beta',
+                stream: false,
+                temperature: 0.7
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${GROK_API_KEY}`
+                }
+            }
+        );
+        
+        const content = response.data.choices[0].message.content;
+        // Extract JSON from response (handle markdown code blocks)
+        const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/) || content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            return JSON.parse(jsonMatch[1] || jsonMatch[0]);
+        }
+        return JSON.parse(content);
+    } catch (error) {
+        console.error('Grok API Error:', error.response?.data || error.message);
+        throw error;
+    }
+};
 
 export const generateReport = async (req, res) => {
     try {
@@ -45,7 +86,7 @@ export const generateReport = async (req, res) => {
             };
         });
 
-        // Generate AI analysis
+        // Generate AI analysis using Grok
         const prompt = `You are a professional financial advisor analyzing a user's monthly expenses. Provide a comprehensive financial report.
 
 Financial Data:
@@ -69,14 +110,9 @@ Be specific, actionable, and encouraging. Focus on concrete steps they can take.
 
         let aiAnalysis = null;
         try {
-            const message = await anthropic.messages.create({
-                model: 'claude-3-5-sonnet-20241022',
-                max_tokens: 2048,
-                messages: [{ role: 'user', content: prompt }]
-            });
-            aiAnalysis = JSON.parse(message.content[0].text);
+            aiAnalysis = await callGrokAPI(prompt);
         } catch (aiError) {
-            console.error('AI Error:', aiError);
+            console.error('Grok AI Error:', aiError);
             // Fallback to rule-based analysis
             aiAnalysis = generateFallbackAnalysis(totalExpenses, budget?.amount || 0, categoryTotals, transactions.length);
         }

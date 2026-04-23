@@ -249,9 +249,12 @@ notificationManager.info('Report generated');
 
 ## 🤖 AI Integration
 
-### Primary: Claude AI (Anthropic)
+### Primary: Grok AI (xAI)
 
-**Model:** `claude-3-5-sonnet-20241022`
+**Model:** `grok-beta`
+**API:** `https://api.x.ai/v1/chat/completions`
+
+**Get API Key:** [https://x.ai](https://x.ai)
 
 **Prompt Structure:**
 ```
@@ -413,7 +416,7 @@ const downloadPDF = () => {
 ```env
 DB_URL=your_mongodb_url
 JWT_SECRET=your_jwt_secret
-ANTHROPIC_API_KEY=your_anthropic_key
+GROK_API_KEY=your_grok_api_key
 PORT=8000
 ```
 
@@ -500,7 +503,7 @@ npm run dev
 **Solution:** Check backend is running and API endpoint is accessible
 
 ### Issue: AI analysis shows fallback
-**Solution:** Verify ANTHROPIC_API_KEY is set correctly in .env
+**Solution:** Verify GROK_API_KEY is set correctly in .env
 
 ### Issue: Category budgets not saving
 **Solution:** Ensure Prisma client is generated: `npx prisma generate`
