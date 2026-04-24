@@ -31,7 +31,11 @@ app.get('/',(req,res)=>{
     res.send("Zentrack API Server");
 });
 
-app.listen(PORT,()=>{
-    console.log(`Server is running on port ${PORT}`);
-    scheduleMonthlyReports();
-});
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(PORT, () => {
+        console.log(`Server is running on port ${PORT}`);
+        scheduleMonthlyReports();
+    });
+}
+
+export default app;
