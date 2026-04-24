@@ -1,0 +1,5 @@
+node_modules
+.env.bak
+.env.example
+src/nodemon.json
+*.log
