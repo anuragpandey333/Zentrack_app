@@ -151,7 +151,7 @@ const Reports = () => {
         const sortedDates = Object.keys(grouped).sort();
         return sortedDates.map(d => {
             const dateObj = new Date(d);
-            const month = dateObj.toLocaleString('default`, { month: 'short' });
+            const month = dateObj.toLocaleString('default', { month: 'short' });
             const day = dateObj.getDate();
             return {
                 name: `${month} ${day}`,
