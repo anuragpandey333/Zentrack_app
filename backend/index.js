@@ -8,6 +8,8 @@ import budgetRoutes from './src/routes/budget.js';
 import aiRoutes from './src/routes/ai.js';
 import userRoutes from './src/routes/user.js';
 import notificationRoutes from './src/routes/notifications.js';
+import reportsRoutes from './src/routes/reports.js';
+import analyticsRoutes from './src/routes/analytics.js';
 import { scheduleMonthlyReports } from './src/services/cronJobs.js';
 
 dotenv.config();
@@ -26,6 +28,8 @@ app.use('/api/budget', budgetRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/reports', reportsRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 app.get('/',(req,res)=>{
     res.send("Zentrack API Server");
