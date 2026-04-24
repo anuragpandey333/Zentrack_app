@@ -7,24 +7,23 @@ import {
     Plus, Filter, Download, 
     ShoppingBag, Briefcase, Tv, Car, 
     RefreshCw, Coffee, Package, Activity,
-    X, Trash2
+    X, Trash2, ArrowRightLeft
 } from 'lucide-react';
 import { notificationManager } from '../utils/notifications';
 import { convertCurrency, formatCurrency, getCurrencySymbol } from '../utils/currency';
 
-const CATEGORIES = ['Food', 'Transport', 'Shopping', 'Bills', 'Entertainment', 'Health', 'Education', 'Other'];
+const CATEGORIES = ['Housing', 'Food & Dining', 'Transportation', 'Entertainment', 'Shopping', 'Bills', 'Health', 'Other'];
 
 const getCategoryIcon = (category) => {
-    switch(category?.toLowerCase()) {
-        case 'food': return <Coffee size={18} />;
-        case 'transport': return <Car size={18} />;
-        case 'shopping': return <ShoppingBag size={18} />;
-        case 'bills': return <RefreshCw size={18} />;
-        case 'entertainment': return <Tv size={18} />;
-        case 'health': return <Activity size={18} />;
-        case 'education': return <Briefcase size={18} />;
-        default: return <Package size={18} />;
-    }
+    const cat = category?.toLowerCase();
+    if (cat?.includes('food') || cat?.includes('dining')) return <Coffee size={18} />;
+    if (cat?.includes('transport')) return <Car size={18} />;
+    if (cat?.includes('shopping')) return <ShoppingBag size={18} />;
+    if (cat?.includes('bills')) return <RefreshCw size={18} />;
+    if (cat?.includes('entertainment')) return <Tv size={18} />;
+    if (cat?.includes('health')) return <Activity size={18} />;
+    if (cat?.includes('education') || cat?.includes('housing')) return <Briefcase size={18} />;
+    return <Package size={18} />;
 };
 
 const Transactions = () => {
@@ -34,11 +33,15 @@ const Transactions = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [activeTab, setActiveTab] = useState('All');
     const [showAddModal, setShowAddModal] = useState(false);
+    const [transactionType, setTransactionType] = useState(null); // 'income', 'expense', 'transfer'
     const [formData, setFormData] = useState({ 
         type: 'debit', 
         amount: '', 
         category: 'Food', 
-        description: '' 
+        description: '',
+        fromBank: '',
+        toBank: '',
+        date: new Date().toISOString().split('T')[0]
     });
     
     // Pagination
@@ -65,16 +68,54 @@ const Transactions = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        // Validation
+        if (!formData.amount || parseFloat(formData.amount) <= 0) {
+            notificationManager.error('Amount must be a positive number');
+            return;
+        }
+        
+        if (transactionType === 'transfer') {
+            if (!formData.fromBank || !formData.fromBank.trim()) {
+                notificationManager.error('From Bank is required');
+                return;
+            }
+        }
+        
         try {
             const token = localStorage.getItem('token');
-            await axios.post('http://localhost:8000/api/transactions', {
-                ...formData,
-                amount: parseFloat(formData.amount)
-            }, {
+            const payload = {
+                amount: parseFloat(formData.amount),
+                date: formData.date
+            };
+            
+            if (transactionType === 'transfer') {
+                payload.type = 'transfer';
+                payload.category = 'Transfer';
+                payload.fromBank = formData.fromBank;
+                payload.toBank = formData.toBank || '';
+                payload.description = formData.description || `Transfer from ${formData.fromBank}${formData.toBank ? ` to ${formData.toBank}` : ''}`;
+            } else {
+                payload.type = formData.type;
+                payload.category = formData.category;
+                payload.description = formData.description;
+            }
+            
+            await axios.post('http://localhost:8000/api/transactions', payload, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setFormData({ type: 'debit', amount: '', category: 'Food', description: '' });
+            
+            setFormData({ 
+                type: 'debit', 
+                amount: '', 
+                category: 'Food', 
+                description: '',
+                fromBank: '',
+                toBank: '',
+                date: new Date().toISOString().split('T')[0]
+            });
             setShowAddModal(false);
+            setTransactionType(null);
             fetchTransactions();
             notificationManager.success('Transaction added successfully!');
         } catch (error) {
@@ -105,7 +146,7 @@ const Transactions = () => {
         let matchesTab = true;
         if (activeTab === 'Income') matchesTab = t.type === 'credit';
         if (activeTab === 'Expenses') matchesTab = t.type === 'debit';
-        if (activeTab === 'Transfers') matchesTab = t.category.toLowerCase() === 'transfer'; // Mock transfer logic
+        if (activeTab === 'Transfers') matchesTab = t.type === 'transfer';
 
         return matchesSearch && matchesTab;
     });
@@ -201,18 +242,31 @@ const Transactions = () => {
                                     <tr key={t._id || t.id} className="hover:bg-slate-50/80 transition-colors group">
                                         <td className="py-4 px-6">
                                             <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-600 border border-slate-100 shrink-0">
-                                                    {getCategoryIcon(t.category)}
+                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-slate-600 border shrink-0 ${
+                                                    t.type === 'transfer' ? 'bg-purple-50 border-purple-100 text-purple-600' : 'bg-slate-50 border-slate-100'
+                                                }`}>
+                                                    {t.type === 'transfer' ? <ArrowRightLeft size={18} /> : getCategoryIcon(t.category)}
                                                 </div>
                                                 <div>
-                                                    <p className="font-semibold text-slate-900 text-sm">{t.description || t.category}</p>
-                                                    <p className="text-xs text-slate-500 mt-0.5">{t.category}</p>
+                                                    <p className="font-semibold text-slate-900 text-sm">
+                                                        {t.type === 'transfer' 
+                                                            ? `${t.fromBank}${t.toBank ? ` → ${t.toBank}` : ''}` 
+                                                            : (t.description || t.category)
+                                                        }
+                                                    </p>
+                                                    <p className="text-xs text-slate-500 mt-0.5">
+                                                        {t.type === 'transfer' ? 'Bank Transfer' : t.category}
+                                                    </p>
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="py-4 px-6">
-                                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-50 text-slate-600 border border-slate-100">
-                                                {t.category}
+                                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${
+                                                t.type === 'transfer' 
+                                                    ? 'bg-purple-50 text-purple-600 border-purple-100' 
+                                                    : 'bg-slate-50 text-slate-600 border-slate-100'
+                                            }`}>
+                                                {t.type === 'transfer' ? 'Transfer' : t.category}
                                             </span>
                                         </td>
                                         <td className="py-4 px-6 text-sm text-slate-500 font-medium">
@@ -222,9 +276,9 @@ const Transactions = () => {
                                             {t.type === 'credit' ? 'Chase Checking' : 'Credit Card'}
                                         </td>
                                         <td className={`py-4 px-6 text-sm font-semibold text-right ${
-                                            t.type === 'credit' ? 'text-emerald-500' : 'text-slate-900'
+                                            t.type === 'credit' ? 'text-emerald-500' : t.type === 'transfer' ? 'text-purple-600' : 'text-slate-900'
                                         }`}>
-                                            {t.type === 'credit' ? '+' : '-'}{formatCurrency(convertCurrency(t.amount, 'INR', userCurrency), userCurrency)}
+                                            {t.type === 'transfer' ? '' : (t.type === 'credit' ? '+' : '-')}{formatCurrency(convertCurrency(t.amount, 'INR', userCurrency), userCurrency)}
                                         </td>
                                         <td className="py-4 px-6">
                                             <span className="text-xs font-medium text-slate-500">
@@ -307,75 +361,225 @@ const Transactions = () => {
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
                     <div className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl">
                         <div className="flex items-center justify-between mb-8">
-                            <h2 className="text-xl font-semibold text-slate-900">Add Transaction</h2>
+                            <h2 className="text-xl font-semibold text-slate-900">
+                                {transactionType ? `Add ${transactionType === 'income' ? 'Income' : transactionType === 'expense' ? 'Expense' : 'Bank Transfer'}` : 'Add Transaction'}
+                            </h2>
                             <button 
-                                onClick={() => setShowAddModal(false)}
+                                onClick={() => {
+                                    setShowAddModal(false);
+                                    setTransactionType(null);
+                                }}
                                 className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
                             >
                                 <X size={20} />
                             </button>
                         </div>
-                        <form onSubmit={handleSubmit} className="space-y-5">
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-2">Type</label>
-                                <select
-                                    name="type"
-                                    value={formData.type}
-                                    onChange={handleChange}
-                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none transition-all"
+                        
+                        {!transactionType ? (
+                            <div className="space-y-3">
+                                <button
+                                    onClick={() => {
+                                        setTransactionType('income');
+                                        setFormData({ ...formData, type: 'credit' });
+                                    }}
+                                    className="w-full p-5 bg-white border border-slate-200 rounded-2xl hover:bg-slate-50 transition-all group"
                                 >
-                                    <option value="debit">Expense</option>
-                                    <option value="credit">Income</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-2">Amount</label>
-                                <div className="relative">
-                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">{getCurrencySymbol(userCurrency)}</span>
-                                    <input
-                                        type="number"
-                                        name="amount"
-                                        required
-                                        value={formData.amount}
-                                        onChange={handleChange}
-                                        className="w-full pl-8 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none transition-all"
-                                        placeholder="0.00"
-                                    />
-                                </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-2">Category</label>
-                                <select
-                                    name="category"
-                                    value={formData.category}
-                                    onChange={handleChange}
-                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none transition-all"
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center text-white">
+                                            <Plus size={24} />
+                                        </div>
+                                        <div className="text-left">
+                                            <h3 className="font-semibold text-slate-900 text-base">Income</h3>
+                                            <p className="text-sm text-slate-500">Add money received</p>
+                                        </div>
+                                    </div>
+                                </button>
+                                
+                                <button
+                                    onClick={() => {
+                                        setTransactionType('expense');
+                                        setFormData({ ...formData, type: 'debit' });
+                                    }}
+                                    className="w-full p-5 bg-white border border-slate-200 rounded-2xl hover:bg-slate-50 transition-all group"
                                 >
-                                    {CATEGORIES.map(cat => (
-                                        <option key={cat} value={cat}>{cat}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-2">Description</label>
-                                <input
-                                    type="text"
-                                    name="description"
-                                    value={formData.description}
-                                    onChange={handleChange}
-                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none transition-all"
-                                    placeholder="e.g. Whole Foods Market"
-                                />
-                            </div>
-                            <div className="pt-2">
-                                <button 
-                                    type="submit" 
-                                    className="w-full py-3 px-4 bg-slate-900 text-white rounded-xl hover:bg-slate-800 font-semibold shadow-md transition-colors"
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center text-white">
+                                            <ShoppingBag size={24} />
+                                        </div>
+                                        <div className="text-left">
+                                            <h3 className="font-semibold text-slate-900 text-base">Expense</h3>
+                                            <p className="text-sm text-slate-500">Add money spent</p>
+                                        </div>
+                                    </div>
+                                </button>
+                                
+                                <button
+                                    onClick={() => {
+                                        setTransactionType('transfer');
+                                        setFormData({ ...formData, type: 'transfer', category: 'Transfer' });
+                                    }}
+                                    className="w-full p-5 bg-white border border-slate-200 rounded-2xl hover:bg-slate-50 transition-all group"
                                 >
-                                    Save Transaction
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center text-white">
+                                            <ArrowRightLeft size={24} />
+                                        </div>
+                                        <div className="text-left">
+                                            <h3 className="font-semibold text-slate-900 text-base">Bank Transfer</h3>
+                                            <p className="text-sm text-slate-500">Transfer between accounts</p>
+                                        </div>
+                                    </div>
                                 </button>
                             </div>
-                        </form>
+                        ) : transactionType === 'transfer' ? (
+                            <form onSubmit={handleSubmit} className="space-y-5">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">From Bank Account *</label>
+                                    <input
+                                        type="text"
+                                        name="fromBank"
+                                        required
+                                        value={formData.fromBank}
+                                        onChange={handleChange}
+                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none transition-all"
+                                        placeholder="e.g. HDFC Savings"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">To Bank Account</label>
+                                    <input
+                                        type="text"
+                                        name="toBank"
+                                        value={formData.toBank}
+                                        onChange={handleChange}
+                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none transition-all"
+                                        placeholder="e.g. SBI Current"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">Transfer Amount *</label>
+                                    <div className="relative">
+                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">{getCurrencySymbol(userCurrency)}</span>
+                                        <input
+                                            type="number"
+                                            name="amount"
+                                            required
+                                            step="0.01"
+                                            min="0.01"
+                                            value={formData.amount}
+                                            onChange={handleChange}
+                                            className="w-full pl-8 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none transition-all"
+                                            placeholder="0.00"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">Date</label>
+                                    <input
+                                        type="date"
+                                        name="date"
+                                        value={formData.date}
+                                        onChange={handleChange}
+                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none transition-all"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">Notes</label>
+                                    <input
+                                        type="text"
+                                        name="description"
+                                        value={formData.description}
+                                        onChange={handleChange}
+                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none transition-all"
+                                        placeholder="Optional notes about this transfer"
+                                    />
+                                </div>
+                                <div className="flex gap-3 pt-2">
+                                    <button 
+                                        type="button"
+                                        onClick={() => setTransactionType(null)}
+                                        className="flex-1 py-3 px-4 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 font-semibold transition-colors"
+                                    >
+                                        Back
+                                    </button>
+                                    <button 
+                                        type="submit" 
+                                        className="flex-1 py-3 px-4 bg-slate-900 text-white rounded-xl hover:bg-slate-800 font-semibold shadow-md transition-colors"
+                                    >
+                                        Save Transfer
+                                    </button>
+                                </div>
+                            </form>
+                        ) : (
+                            <form onSubmit={handleSubmit} className="space-y-5">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">Amount *</label>
+                                    <div className="relative">
+                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">{getCurrencySymbol(userCurrency)}</span>
+                                        <input
+                                            type="number"
+                                            name="amount"
+                                            required
+                                            step="0.01"
+                                            min="0.01"
+                                            value={formData.amount}
+                                            onChange={handleChange}
+                                            className="w-full pl-8 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none transition-all"
+                                            placeholder="0.00"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">Category *</label>
+                                    <select
+                                        name="category"
+                                        value={formData.category}
+                                        onChange={handleChange}
+                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none transition-all"
+                                    >
+                                        {CATEGORIES.map(cat => (
+                                            <option key={cat} value={cat}>{cat}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">Description</label>
+                                    <input
+                                        type="text"
+                                        name="description"
+                                        value={formData.description}
+                                        onChange={handleChange}
+                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none transition-all"
+                                        placeholder="e.g. Whole Foods Market"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">Date</label>
+                                    <input
+                                        type="date"
+                                        name="date"
+                                        value={formData.date}
+                                        onChange={handleChange}
+                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none transition-all"
+                                    />
+                                </div>
+                                <div className="flex gap-3 pt-2">
+                                    <button 
+                                        type="button"
+                                        onClick={() => setTransactionType(null)}
+                                        className="flex-1 py-3 px-4 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 font-semibold transition-colors"
+                                    >
+                                        Back
+                                    </button>
+                                    <button 
+                                        type="submit" 
+                                        className="flex-1 py-3 px-4 bg-slate-900 text-white rounded-xl hover:bg-slate-800 font-semibold shadow-md transition-colors"
+                                    >
+                                        Save Transaction
+                                    </button>
+                                </div>
+                            </form>
+                        )}
                     </div>
                 </div>
             )}

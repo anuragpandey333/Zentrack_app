@@ -1,4 +1,5 @@
 import prisma from '../lib/prisma.js';
+import { checkBudgetAndNotify } from './notificationController.js';
 
 export const getTransactions = async (req, res) => {
     try {
@@ -13,20 +14,30 @@ export const getTransactions = async (req, res) => {
 };
 
 export const addTransaction = async (req, res) => {
-    const { type, amount, category, description, date } = req.body;
+    const { type, amount, category, description, date, fromBank, toBank } = req.body;
     try {
+        console.log('Received transaction data:', { type, amount, category, description, date, fromBank, toBank });
         const transaction = await prisma.transaction.create({
             data: {
                 userId: req.user.id,
                 type,
                 amount,
                 category,
-                description,
+                description: description || null,
+                fromBank: fromBank || null,
+                toBank: toBank || null,
                 date: date ? new Date(date) : new Date()
             }
         });
+        
+        // Check budget and send notification if needed
+        if (type === 'debit') {
+            await checkBudgetAndNotify(req.user.id);
+        }
+        
         res.status(201).json(transaction);
     } catch (error) {
+        console.error('Error creating transaction:', error);
         res.status(500).json({ message: error.message });
     }
 };

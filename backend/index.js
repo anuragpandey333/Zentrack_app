@@ -7,6 +7,8 @@ import transactionRoutes from './src/routes/transactions.js';
 import budgetRoutes from './src/routes/budget.js';
 import aiRoutes from './src/routes/ai.js';
 import userRoutes from './src/routes/user.js';
+import notificationRoutes from './src/routes/notifications.js';
+import { scheduleMonthlyReports } from './src/services/cronJobs.js';
 
 dotenv.config();
 
@@ -23,6 +25,7 @@ app.use('/api/transactions', transactionRoutes);
 app.use('/api/budget', budgetRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.get('/',(req,res)=>{
     res.send("Zentrack API Server");
@@ -30,4 +33,5 @@ app.get('/',(req,res)=>{
 
 app.listen(PORT,()=>{
     console.log(`Server is running on port ${PORT}`);
+    scheduleMonthlyReports();
 });

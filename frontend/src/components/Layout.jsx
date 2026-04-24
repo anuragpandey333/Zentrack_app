@@ -31,7 +31,7 @@ const Layout = ({ children }) => {
                         <div className="bg-black text-white p-1.5 rounded-lg">
                             <Wallet size={20} />
                         </div>
-                        <h1 className="font-bold text-xl tracking-tight text-black">Cashflow</h1>
+                        <h1 className="font-bold text-xl tracking-tight text-black">ZENTRACK</h1>
                     </div>
                 </div>
 

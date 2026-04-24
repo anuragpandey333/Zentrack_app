@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import Layout from '../components/Layout';
 import Header from '../components/Header';
 import { useUser } from '../context/UserContext';
@@ -11,7 +12,6 @@ import {
     Bell, 
     Shield, 
     CreditCard, 
-    Plus, 
     Camera, 
     ChevronDown,
     Save
@@ -24,6 +24,12 @@ const Settings = () => {
     const [activeTab, setActiveTab] = useState('Profile');
     const [loading, setLoading] = useState(false);
     const [uploadingImage, setUploadingImage] = useState(false);
+    const [notifications, setNotifications] = useState({
+        notifySecurityAlerts: true,
+        notifyMonthlyReports: true,
+        notifyBudgetWarnings: false,
+        notifyNewFeatures: true
+    });
     
     const [profile, setProfile] = useState({
         name: '',
@@ -51,6 +57,12 @@ const Settings = () => {
                 hobbies: user.hobbies || '',
                 currency: user.currency || 'USD'
             }));
+            setNotifications({
+                notifySecurityAlerts: user.notifySecurityAlerts ?? true,
+                notifyMonthlyReports: user.notifyMonthlyReports ?? true,
+                notifyBudgetWarnings: user.notifyBudgetWarnings ?? false,
+                notifyNewFeatures: user.notifyNewFeatures ?? true
+            });
         }
     }, [navigate, user]);
 
@@ -151,13 +163,16 @@ const Settings = () => {
     const handleSave = async () => {
         try {
             setLoading(true);
+            
             await updateProfile({
                 name: profile.name,
                 picture: profile.picture,
                 bio: profile.bio,
                 hobbies: profile.hobbies,
-                currency: profile.currency
+                currency: profile.currency,
+                ...notifications
             });
+            
             notificationManager.success('Settings saved successfully!');
         } catch (error) {
             console.error('Error saving profile:', error);
@@ -190,11 +205,6 @@ const Settings = () => {
             <Header 
                 title="Settings"
                 subtitle="Manage your account preferences and settings."
-                actions={
-                    <button className="p-2 bg-black text-white rounded-full hover:bg-slate-800 transition-colors">
-                        <Plus size={20} />
-                    </button>
-                }
             />
             <div className="max-w-5xl mx-auto">
 
@@ -221,8 +231,8 @@ const Settings = () => {
                                                     className="w-full h-full object-cover"
                                                 />
                                             ) : (
-                                                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-500 to-pink-500 text-white text-2xl font-bold">
-                                                    {profile.name?.charAt(0) || 'U'}
+                                                <div className="w-full h-full flex items-center justify-center bg-slate-900 text-white text-2xl font-bold">
+                                                    {profile.email?.charAt(0).toUpperCase() || 'U'}
                                                 </div>
                                             )}
                                         </div>
@@ -351,23 +361,66 @@ const Settings = () => {
                                 <p className="text-slate-500 text-sm mb-6">Choose what updates you want to receive.</p>
                                 
                                 <div className="space-y-4">
-                                    {[
-                                        { title: 'Security alerts', desc: 'Get notified about suspicious activity and login attempts.', checked: true },
-                                        { title: 'Monthly reports', desc: 'A summary of your spending and savings every month.', checked: true },
-                                        { title: 'Budget warnings', desc: 'Alerts when you reach 80% or 100% of your budget.', checked: false },
-                                        { title: 'New features', desc: 'Be the first to know about new tools and improvements.', checked: true }
-                                    ].map((item, i) => (
-                                        <div key={i} className="flex items-start justify-between p-4 rounded-xl hover:bg-slate-50 transition-colors">
-                                            <div>
-                                                <h3 className="text-sm font-medium text-slate-900">{item.title}</h3>
-                                                <p className="text-xs text-slate-500 mt-0.5">{item.desc}</p>
-                                            </div>
-                                            <label className="relative inline-flex items-center cursor-pointer">
-                                                <input type="checkbox" defaultChecked={item.checked} className="sr-only peer" />
-                                                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
-                                            </label>
+                                    <div className="flex items-start justify-between p-4 rounded-xl hover:bg-slate-50 transition-colors">
+                                        <div>
+                                            <h3 className="text-sm font-medium text-slate-900">Security alerts</h3>
+                                            <p className="text-xs text-slate-500 mt-0.5">Get notified about suspicious activity and login attempts.</p>
                                         </div>
-                                    ))}
+                                        <label className="relative inline-flex items-center cursor-pointer">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={notifications.notifySecurityAlerts}
+                                                onChange={(e) => setNotifications({...notifications, notifySecurityAlerts: e.target.checked})}
+                                                className="sr-only peer" 
+                                            />
+                                            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                                        </label>
+                                    </div>
+                                    <div className="flex items-start justify-between p-4 rounded-xl hover:bg-slate-50 transition-colors">
+                                        <div>
+                                            <h3 className="text-sm font-medium text-slate-900">Monthly reports</h3>
+                                            <p className="text-xs text-slate-500 mt-0.5">A summary of your spending and savings every month.</p>
+                                        </div>
+                                        <label className="relative inline-flex items-center cursor-pointer">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={notifications.notifyMonthlyReports}
+                                                onChange={(e) => setNotifications({...notifications, notifyMonthlyReports: e.target.checked})}
+                                                className="sr-only peer" 
+                                            />
+                                            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                                        </label>
+                                    </div>
+                                    <div className="flex items-start justify-between p-4 rounded-xl hover:bg-slate-50 transition-colors">
+                                        <div>
+                                            <h3 className="text-sm font-medium text-slate-900">Budget warnings</h3>
+                                            <p className="text-xs text-slate-500 mt-0.5">Alerts when you reach 80% or 100% of your budget.</p>
+                                        </div>
+                                        <label className="relative inline-flex items-center cursor-pointer">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={notifications.notifyBudgetWarnings}
+                                                onChange={(e) => setNotifications({...notifications, notifyBudgetWarnings: e.target.checked})}
+                                                className="sr-only peer" 
+                                            />
+                                            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                                        </label>
+                                    </div>
+                                    <div className="flex items-start justify-between p-4 rounded-xl hover:bg-slate-50 transition-colors">
+                                        <div>
+                                            <h3 className="text-sm font-medium text-slate-900">New features</h3>
+                                            <p className="text-xs text-slate-500 mt-0.5">Be the first to know about new tools and improvements.</p>
+                                        </div>
+                                        <label className="relative inline-flex items-center cursor-pointer">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={notifications.notifyNewFeatures}
+                                                onChange={(e) => setNotifications({...notifications, notifyNewFeatures: e.target.checked})}
+                                                className="sr-only peer" 
+                                            />
+                                            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+                                        </label>
+                                    </div>
                                 </div>
 
                                 <div className="mt-8 flex justify-end">

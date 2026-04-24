@@ -25,12 +25,17 @@ const Avatar = ({ src, alt = 'User', size = 'md', className = '' }) => {
 
     const getInitials = (name) => {
         if (!name) return 'U';
+        // If it looks like an email, use first letter of email
+        if (name.includes('@')) {
+            return name.charAt(0).toUpperCase();
+        }
+        // Otherwise use initials from name
         return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
     };
 
     if (!src || imageError) {
         return (
-            <div className={`${sizeClasses[size]} ${className} rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold`}>
+            <div className={`${sizeClasses[size]} ${className} rounded-full bg-slate-900 flex items-center justify-center text-white font-semibold`}>
                 {alt ? getInitials(alt) : <User className="w-1/2 h-1/2" />}
             </div>
         );

@@ -15,11 +15,27 @@ const Login = () => {
     const handleGoogleLogin = useGoogleLogin({
         onSuccess: async (tokenResponse) => {
             try {
-                console.log(tokenResponse);
+                const userInfoResponse = await axios.get(
+                    'https://www.googleapis.com/oauth2/v3/userinfo',
+                    { headers: { Authorization: `Bearer ${tokenResponse.access_token}` } }
+                );
+                
+                const { data } = await axios.post('http://localhost:8000/api/auth/google', {
+                    credential: tokenResponse.access_token,
+                    userInfo: userInfoResponse.data
+                });
+                
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify(data));
+                navigate('/dashboard');
             } catch (err) {
                 console.error(err);
+                setError('Google login failed. Please try again.');
             }
         },
+        onError: () => {
+            setError('Google login failed. Please try again.');
+        }
     });
 
     const handleSubmit = async (e) => {

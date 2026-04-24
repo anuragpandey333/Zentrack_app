@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Bell, Search, Settings as SettingsIcon } from 'lucide-react';
+import { Settings as SettingsIcon } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import Avatar from './Avatar';
 
@@ -20,17 +20,6 @@ const Header = ({ title, subtitle, actions }) => {
                     {/* Custom Actions */}
                     {actions && <div className="flex items-center gap-2">{actions}</div>}
 
-                    {/* Search */}
-                    <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-                        <Search size={20} className="text-slate-600" />
-                    </button>
-
-                    {/* Notifications */}
-                    <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors relative">
-                        <Bell size={20} className="text-slate-600" />
-                        <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                    </button>
-
                     {/* Settings */}
                     <Link to="/settings" className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
                         <SettingsIcon size={20} className="text-slate-600" />
@@ -42,7 +31,7 @@ const Header = ({ title, subtitle, actions }) => {
                             <p className="text-sm font-semibold text-slate-800">{user?.name || 'User'}</p>
                             <p className="text-xs text-slate-500">{user?.email}</p>
                         </div>
-                        <Avatar src={user?.picture} alt={user?.name} size="lg" />
+                        <Avatar src={user?.picture} alt={user?.email || user?.name} size="lg" />
                     </Link>
                 </div>
             </div>

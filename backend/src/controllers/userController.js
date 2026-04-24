@@ -12,6 +12,10 @@ export const getUserProfile = async (req, res) => {
                 bio: true,
                 hobbies: true,
                 currency: true,
+                notifySecurityAlerts: true,
+                notifyMonthlyReports: true,
+                notifyBudgetWarnings: true,
+                notifyNewFeatures: true,
                 createdAt: true
             }
         });
@@ -27,7 +31,7 @@ export const getUserProfile = async (req, res) => {
 };
 
 export const updateUserProfile = async (req, res) => {
-    const { name, picture, bio, hobbies, currency } = req.body;
+    const { name, picture, bio, hobbies, currency, notifySecurityAlerts, notifyMonthlyReports, notifyBudgetWarnings, notifyNewFeatures } = req.body;
     
     try {
         const updateData = {};
@@ -36,6 +40,10 @@ export const updateUserProfile = async (req, res) => {
         if (bio !== undefined) updateData.bio = bio;
         if (hobbies !== undefined) updateData.hobbies = hobbies;
         if (currency !== undefined) updateData.currency = currency;
+        if (notifySecurityAlerts !== undefined) updateData.notifySecurityAlerts = notifySecurityAlerts;
+        if (notifyMonthlyReports !== undefined) updateData.notifyMonthlyReports = notifyMonthlyReports;
+        if (notifyBudgetWarnings !== undefined) updateData.notifyBudgetWarnings = notifyBudgetWarnings;
+        if (notifyNewFeatures !== undefined) updateData.notifyNewFeatures = notifyNewFeatures;
 
         const user = await prisma.user.update({
             where: { id: req.user.id },
@@ -48,6 +56,10 @@ export const updateUserProfile = async (req, res) => {
                 bio: true,
                 hobbies: true,
                 currency: true,
+                notifySecurityAlerts: true,
+                notifyMonthlyReports: true,
+                notifyBudgetWarnings: true,
+                notifyNewFeatures: true,
                 createdAt: true
             }
         });

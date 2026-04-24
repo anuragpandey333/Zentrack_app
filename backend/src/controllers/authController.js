@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import { OAuth2Client } from 'google-auth-library';
 import prisma from '../lib/prisma.js';
+import { sendSecurityAlert } from '../services/emailService.js';
 
 const client = new OAuth2Client();
 
@@ -44,6 +45,10 @@ export const loginUser = async (req, res) => {
     try {
         const user = await prisma.user.findUnique({ where: { email } });
         if (user && user.password && (await bcrypt.compare(password, user.password))) {
+            // Send security alert
+            const loginTime = new Date().toLocaleString();
+            await sendSecurityAlert(user, `New login detected on ${loginTime}`);
+            
             res.json({
                 _id: user.id,
                 name: user.name,
@@ -85,18 +90,33 @@ export const updateProfile = async (req, res) => {
 };
 
 export const googleAuth = async (req, res) => {
-    const { credential } = req.body;
+    const { credential, userInfo } = req.body;
     try {
-        const ticket = await client.verifyIdToken({
-            idToken: credential,
-            audience: process.env.GOOGLE_CLIENT_ID,
-        });
-        const { sub, name, email, picture } = ticket.getPayload();
+        let email, name, picture, googleId;
+        
+        if (userInfo) {
+            // OAuth2 flow with access token
+            email = userInfo.email;
+            name = userInfo.name;
+            picture = userInfo.picture;
+            googleId = userInfo.sub;
+        } else {
+            // ID token flow
+            const ticket = await client.verifyIdToken({
+                idToken: credential,
+                audience: process.env.GOOGLE_CLIENT_ID,
+            });
+            const payload = ticket.getPayload();
+            email = payload.email;
+            name = payload.name;
+            picture = payload.picture;
+            googleId = payload.sub;
+        }
 
         let user = await prisma.user.findUnique({ where: { email } });
         if (!user) {
             user = await prisma.user.create({
-                data: { name, email, googleId: sub, picture }
+                data: { name, email, googleId, picture }
             });
         }
         res.json({

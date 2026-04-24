@@ -27,6 +27,8 @@ export const UserProvider = ({ children }) => {
 
     const fetchUserProfile = async () => {
         try {
+            const token = localStorage.getItem('token');
+            const config = { headers: { Authorization: `Bearer ${token}` } };
             const res = await axios.get('http://localhost:8000/api/user/profile', config);
             setUser(res.data);
             // Cache in localStorage for instant load
@@ -43,6 +45,8 @@ export const UserProvider = ({ children }) => {
 
     const updateProfilePhoto = async (photoUrl) => {
         try {
+            const token = localStorage.getItem('token');
+            const config = { headers: { Authorization: `Bearer ${token}` } };
             const res = await axios.put('http://localhost:8000/api/user/profile', 
                 { picture: photoUrl }, 
                 config
@@ -58,6 +62,8 @@ export const UserProvider = ({ children }) => {
 
     const updateProfile = async (updates) => {
         try {
+            const token = localStorage.getItem('token');
+            const config = { headers: { Authorization: `Bearer ${token}` } };
             const res = await axios.put('http://localhost:8000/api/user/profile', updates, config);
             setUser(res.data);
             localStorage.setItem('userProfile', JSON.stringify(res.data));
