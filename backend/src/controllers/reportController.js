@@ -227,3 +227,103 @@ export const deleteCategoryBudget = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+export const generateAIInsights = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        
+        const transactions = await prisma.transaction.findMany({
+            where: { userId, type: 'debit' },
+            orderBy: { date: 'desc' }
+        });
+
+        const budget = await prisma.budget.findUnique({ where: { userId } });
+
+        if (transactions.length === 0) {
+            return res.status(400).json({ message: 'No transactions to analyze' });
+        }
+
+        const totalExpenses = transactions.reduce((sum, t) => sum + t.amount, 0);
+        const remaining = (budget?.amount || 0) - totalExpenses;
+        
+        const categoryTotals = transactions.reduce((acc, t) => {
+            acc[t.category] = (acc[t.category] || 0) + t.amount;
+            return acc;
+        }, {});
+
+        const sortedCategories = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1]);
+
+        const prompt = `Analyze this user's expense data and provide brief, actionable insights.
+
+Financial Data:
+- Monthly Budget: ₹${budget?.amount || 0}
+- Total Expenses: ₹${totalExpenses.toFixed(2)}
+- Remaining: ₹${remaining.toFixed(2)}
+- Transactions: ${transactions.length}
+- Category Breakdown: ${JSON.stringify(categoryTotals)}
+
+Provide analysis in JSON format:
+{
+  "observations": ["observation 1", "observation 2", "observation 3"],
+  "patterns": ["pattern 1", "pattern 2"],
+  "suggestions": ["suggestion 1", "suggestion 2", "suggestion 3"],
+  "budgetComparison": "Brief budget vs actual comparison with percentage"
+}
+
+Keep each point short (1 sentence). Be specific and actionable.`;
+
+        let insights;
+        try {
+            const GROK_API_URL = 'https://api.x.ai/v1/chat/completions';
+            const response = await axios.post(
+                GROK_API_URL,
+                {
+                    messages: [
+                        { role: 'system', content: 'You are a financial advisor. Provide brief, clear insights.' },
+                        { role: 'user', content: prompt }
+                    ],
+                    model: 'grok-beta',
+                    temperature: 0.7
+                },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${process.env.GROK_API_KEY}`
+                    }
+                }
+            );
+            
+            const content = response.data.choices[0].message.content;
+            const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/) || content.match(/\{[\s\S]*\}/);
+            insights = JSON.parse(jsonMatch[1] || jsonMatch[0]);
+        } catch (aiError) {
+            console.error('Grok AI Error:', aiError);
+            // Fallback
+            const usagePercent = budget?.amount > 0 ? ((totalExpenses / budget.amount) * 100).toFixed(1) : 0;
+            insights = {
+                observations: [
+                    `Your highest spending is in ${sortedCategories[0][0]} at ₹${sortedCategories[0][1].toFixed(2)}`,
+                    `You've made ${transactions.length} transactions this month`,
+                    `Average transaction amount is ₹${(totalExpenses / transactions.length).toFixed(2)}`
+                ],
+                patterns: [
+                    sortedCategories[0][1] > totalExpenses * 0.3 ? `${sortedCategories[0][0]} spending is unusually high` : 'Spending is well distributed',
+                    transactions.length > 40 ? 'High transaction frequency detected' : 'Moderate spending frequency'
+                ],
+                suggestions: [
+                    `Consider reducing ${sortedCategories[0][0]} expenses by 15-20%`,
+                    'Set category-specific budgets for better control',
+                    'Track daily expenses to catch overspending early'
+                ],
+                budgetComparison: remaining < 0 
+                    ? `You've exceeded your budget by ₹${Math.abs(remaining).toFixed(2)} (${usagePercent}% used)`
+                    : `You're ${usagePercent}% through your budget with ₹${remaining.toFixed(2)} remaining`
+            };
+        }
+
+        res.json(insights);
+    } catch (error) {
+        console.error('AI Insights error:', error);
+        res.status(500).json({ message: error.message });
+    }
+};

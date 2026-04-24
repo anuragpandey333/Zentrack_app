@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, List, LogOut, PieChart, Settings, Wallet, ArrowLeftRight } from 'lucide-react';
+import { LayoutDashboard, List, LogOut, PieChart, Settings, Wallet, ArrowLeftRight, Sparkles, BarChart2, User } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import Avatar from './Avatar';
 
@@ -18,7 +18,7 @@ const Layout = ({ children }) => {
         { path: '/dashboard', label: 'Overview', icon: <LayoutDashboard size={20} /> },
         { path: '/transactions', label: 'Transactions', icon: <ArrowLeftRight size={20} /> },
         { path: '/budgets', label: 'Budgets', icon: <PieChart size={20} /> },
-        { path: '/reports', label: 'Analytics', icon: <List size={20} /> },
+        { path: '/reports', label: 'Reports', icon: <Sparkles size={20} /> },
         { path: '/settings', label: 'Settings', icon: <Settings size={20} /> },
     ];
 

@@ -9,6 +9,7 @@ import transactionRoutes from './routes/transactions.js';
 import budgetRoutes from './routes/budget.js';
 import aiRoutes from './routes/ai.js';
 import reportRoutes from './routes/reports.js';
+import analyticsRoutes from './routes/analytics.js';
 import userRoutes from './routes/user.js';
 
 const app=express();
@@ -28,6 +29,7 @@ app.use('/api/transactions', transactionRoutes);
 app.use('/api/budget', budgetRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/analytics', analyticsRoutes);
 app.use('/api/user', userRoutes);
 
 app.get('/',(req,res)=>{

@@ -5,7 +5,7 @@ import Layout from '../components/Layout';
 import Header from '../components/Header';
 import { useUser } from '../context/UserContext';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Download, Calendar as CalendarIcon } from 'lucide-react';
+import { Download, Calendar as CalendarIcon, Sparkles, Loader } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { notificationManager } from '../utils/notifications';
@@ -20,6 +20,8 @@ const Reports = () => {
     const [transactions, setTransactions] = useState([]);
     const [budget, setBudget] = useState(0);
     const [timeFilter, setTimeFilter] = useState('3M'); // 1W, 1M, 3M, 1Y, ALL
+    const [aiInsights, setAiInsights] = useState(null);
+    const [loadingAI, setLoadingAI] = useState(false);
 
     const token = localStorage.getItem('token');
 
@@ -150,10 +152,185 @@ const Reports = () => {
 
     const downloadReport = () => {
         const doc = new jsPDF();
-        doc.text("Analytics Report", 20, 20);
-        doc.text(`Total Spent: ${formatCurrency(displayTotalSpent, userCurrency)}`, 20, 30);
-        doc.save("Analytics_Report.pdf");
+        const pageWidth = doc.internal.pageSize.width;
+        
+        // Header
+        doc.setFillColor(15, 23, 42); // slate-900
+        doc.rect(0, 0, pageWidth, 40, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(24);
+        doc.setFont(undefined, 'bold');
+        doc.text('Analytics Report', pageWidth / 2, 25, { align: 'center' });
+        
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'normal');
+        doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth / 2, 35, { align: 'center' });
+        
+        let yPos = 55;
+        
+        // Financial Summary
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(16);
+        doc.setFont(undefined, 'bold');
+        doc.text('Financial Summary', 14, yPos);
+        yPos += 10;
+        
+        doc.autoTable({
+            startY: yPos,
+            head: [['Metric', 'Amount']],
+            body: [
+                ['Total Spent', formatCurrency(displayTotalSpent, userCurrency)],
+                ['Monthly Budget', formatCurrency(displayBudget, userCurrency)],
+                ['Remaining', formatCurrency(displayBudget - displayTotalSpent, userCurrency)],
+                ['Transactions', transactions.length.toString()],
+                ['Avg Daily Spend', formatCurrency(displayAvgDailySpend, userCurrency)],
+                ['Savings Rate', `${savingsRate.toFixed(1)}%`]
+            ],
+            theme: 'striped',
+            headStyles: { fillColor: [15, 23, 42] }
+        });
+        
+        yPos = doc.lastAutoTable.finalY + 15;
+        
+        // Top Categories
+        doc.setFontSize(16);
+        doc.setFont(undefined, 'bold');
+        doc.text('Top Spending Categories', 14, yPos);
+        yPos += 10;
+        
+        const categoryRows = topCategoriesData.map(cat => [
+            cat.name,
+            formatCurrency(cat.amount, userCurrency),
+            `${cat.percent}%`
+        ]);
+        
+        doc.autoTable({
+            startY: yPos,
+            head: [['Category', 'Amount', 'Percentage']],
+            body: categoryRows,
+            theme: 'striped',
+            headStyles: { fillColor: [15, 23, 42] }
+        });
+        
+        yPos = doc.lastAutoTable.finalY + 15;
+        
+        // AI Analysis Section
+        if (aiInsights) {
+            if (yPos > 250) {
+                doc.addPage();
+                yPos = 20;
+            }
+            
+            doc.setFontSize(16);
+            doc.setFont(undefined, 'bold');
+            doc.text('AI Analysis', 14, yPos);
+            yPos += 10;
+            
+            // Key Observations
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.text('Key Observations:', 14, yPos);
+            yPos += 7;
+            
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            aiInsights.observations.forEach((obs, idx) => {
+                const obsText = doc.splitTextToSize(`${idx + 1}. ${obs}`, pageWidth - 28);
+                doc.text(obsText, 14, yPos);
+                yPos += obsText.length * 5 + 3;
+            });
+            yPos += 5;
+            
+            // Spending Patterns
+            if (yPos > 250) {
+                doc.addPage();
+                yPos = 20;
+            }
+            
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.text('Spending Patterns:', 14, yPos);
+            yPos += 7;
+            
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            aiInsights.patterns.forEach((pattern, idx) => {
+                const patternText = doc.splitTextToSize(`${idx + 1}. ${pattern}`, pageWidth - 28);
+                doc.text(patternText, 14, yPos);
+                yPos += patternText.length * 5 + 3;
+            });
+            yPos += 5;
+            
+            // Improvement Suggestions
+            if (yPos > 250) {
+                doc.addPage();
+                yPos = 20;
+            }
+            
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.text('Improvement Suggestions:', 14, yPos);
+            yPos += 7;
+            
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            aiInsights.suggestions.forEach((sug, idx) => {
+                const sugText = doc.splitTextToSize(`${idx + 1}. ${sug}`, pageWidth - 28);
+                doc.text(sugText, 14, yPos);
+                yPos += sugText.length * 5 + 3;
+            });
+            yPos += 5;
+            
+            // Budget Comparison
+            if (aiInsights.budgetComparison) {
+                if (yPos > 250) {
+                    doc.addPage();
+                    yPos = 20;
+                }
+                
+                doc.setFontSize(12);
+                doc.setFont(undefined, 'bold');
+                doc.text('Budget Comparison:', 14, yPos);
+                yPos += 7;
+                
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'normal');
+                const compText = doc.splitTextToSize(aiInsights.budgetComparison, pageWidth - 28);
+                doc.text(compText, 14, yPos);
+            }
+        }
+        
+        // Footer
+        const totalPages = doc.internal.pages.length - 1;
+        for (let i = 1; i <= totalPages; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.setTextColor(128, 128, 128);
+            doc.text(`Page ${i} of ${totalPages}`, pageWidth / 2, doc.internal.pageSize.height - 10, { align: 'center' });
+            doc.text('Generated by Zentrack Analytics', pageWidth / 2, doc.internal.pageSize.height - 5, { align: 'center' });
+        }
+        
+        doc.save(`Analytics_Report_${new Date().toISOString().split('T')[0]}.pdf`);
         notificationManager.success('Report downloaded successfully!');
+    };
+
+    const generateAIInsights = async () => {
+        if (expenses.length === 0) {
+            notificationManager.warning('No transactions to analyze');
+            return;
+        }
+
+        try {
+            setLoadingAI(true);
+            const { data } = await axios.get('http://localhost:8000/api/reports/ai-insights', config);
+            setAiInsights(data);
+            notificationManager.success('AI insights generated!');
+        } catch (error) {
+            console.error('Error generating AI insights:', error);
+            notificationManager.error('Failed to generate insights');
+        } finally {
+            setLoadingAI(false);
+        }
     };
 
     const CustomTooltip = ({ active, payload, label }) => {
@@ -286,6 +463,94 @@ const Reports = () => {
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>
+                </div>
+
+                {/* AI Analysis Section */}
+                <div className="bg-white border border-slate-100 rounded-[20px] p-8 shadow-sm mb-8">
+                    <div className="flex justify-between items-start mb-6">
+                        <div>
+                            <h2 className="text-[17px] font-bold text-slate-900 flex items-center gap-2">
+                                <Sparkles size={18} className="text-slate-900" />
+                                AI Analysis
+                            </h2>
+                            <p className="text-sm text-slate-500 mt-1">Get intelligent insights about your spending</p>
+                        </div>
+                        <button
+                            onClick={generateAIInsights}
+                            disabled={loadingAI || expenses.length === 0}
+                            className="px-4 py-2 bg-slate-900 text-white rounded-full flex items-center gap-2 hover:bg-black transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                        >
+                            {loadingAI ? (
+                                <>
+                                    <Loader className="animate-spin" size={16} />
+                                    Analyzing...
+                                </>
+                            ) : (
+                                <>
+                                    <Sparkles size={16} />
+                                    Generate Insights
+                                </>
+                            )}
+                        </button>
+                    </div>
+
+                    {aiInsights ? (
+                        <div className="space-y-6">
+                            {/* Key Observations */}
+                            <div className="bg-slate-50 rounded-xl p-5 border border-slate-100">
+                                <h3 className="text-sm font-semibold text-slate-900 mb-3">Key Observations</h3>
+                                <ul className="space-y-2">
+                                    {aiInsights.observations.map((obs, idx) => (
+                                        <li key={idx} className="flex items-start gap-2 text-sm text-slate-700">
+                                            <span className="text-slate-400 mt-0.5">•</span>
+                                            <span>{obs}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+
+                            {/* Spending Patterns */}
+                            <div className="bg-slate-50 rounded-xl p-5 border border-slate-100">
+                                <h3 className="text-sm font-semibold text-slate-900 mb-3">Spending Patterns</h3>
+                                <ul className="space-y-2">
+                                    {aiInsights.patterns.map((pattern, idx) => (
+                                        <li key={idx} className="flex items-start gap-2 text-sm text-slate-700">
+                                            <span className="text-slate-400 mt-0.5">•</span>
+                                            <span>{pattern}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+
+                            {/* Improvement Suggestions */}
+                            <div className="bg-slate-50 rounded-xl p-5 border border-slate-100">
+                                <h3 className="text-sm font-semibold text-slate-900 mb-3">Improvement Suggestions</h3>
+                                <ul className="space-y-2">
+                                    {aiInsights.suggestions.map((sug, idx) => (
+                                        <li key={idx} className="flex items-start gap-2 text-sm text-slate-700">
+                                            <span className="text-slate-400 mt-0.5">•</span>
+                                            <span>{sug}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+
+                            {/* Budget Comparison */}
+                            {aiInsights.budgetComparison && (
+                                <div className="bg-slate-50 rounded-xl p-5 border border-slate-100">
+                                    <h3 className="text-sm font-semibold text-slate-900 mb-3">Budget Comparison</h3>
+                                    <p className="text-sm text-slate-700">{aiInsights.budgetComparison}</p>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="text-center py-12">
+                            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Sparkles size={24} className="text-slate-400" />
+                            </div>
+                            <p className="text-sm text-slate-500">Click "Generate Insights" to analyze your spending</p>
+                        </div>
+                    )}
                 </div>
 
                 {/* Bottom Row */}
