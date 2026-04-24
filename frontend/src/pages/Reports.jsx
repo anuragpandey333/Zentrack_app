@@ -42,8 +42,8 @@ const Reports = () => {
     const fetchData = async () => {
         try {
             const [txRes, budgetRes] = await Promise.all([
-                axios.get(`${API_URL}/transactions}`, config).catch(() => ({ data: [] })),
-                axios.get(`${API_URL}/budget}`, config).catch(() => ({ data: { amount: 0 } }))
+                axios.get(`${API_URL}/transactions`, config).catch(() => ({ data: [] })),
+                axios.get(`${API_URL}/budget`, config).catch(() => ({ data: { amount: 0 } }))
             ]);
             setTransactions(txRes.data || []);
             setBudget(budgetRes.data.amount || 0);
@@ -370,7 +370,7 @@ const Reports = () => {
 
         try {
             setLoadingAI(true);
-            const { data } = await axios.get(`${API_URL}/reports/ai-insights}`, config);
+            const { data } = await axios.get(`${API_URL}/reports/ai-insights`, config);
             setAiInsights(data);
             notificationManager.success('AI insights generated!');
         } catch (error) {

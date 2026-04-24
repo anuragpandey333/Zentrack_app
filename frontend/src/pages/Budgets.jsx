@@ -76,8 +76,8 @@ const Budgets = () => {
     const fetchData = async () => {
         try {
             const [txRes, budgetRes] = await Promise.all([
-                axios.get(`${API_URL}/transactions}`, config).catch(() => ({ data: [] })),
-                axios.get(`${API_URL}/budget}`, config).catch(() => ({ data: { amount: 0 } }))
+                axios.get(`${API_URL}/transactions`, config).catch(() => ({ data: [] })),
+                axios.get(`${API_URL}/budget`, config).catch(() => ({ data: { amount: 0 } }))
             ]);
             const debitTx = txRes.data.filter(t => t.type === 'debit');
             setExpenses(debitTx);
