@@ -2,12 +2,12 @@
 
 A modern, feature-rich expense tracking application with AI-powered financial insights using xAI Grok.
 
-## 🌟 Features
+##  Features
 
 ### Core Features
-- ✅ **Add Expenses** - Track expenses with description, amount, category, date
-- 💵 **Custom Monthly Budget** - Set and manage your monthly spending budget
-- 📊 **Live Stats Dashboard**
+-  **Add Expenses** - Track expenses with description, amount, category, date
+-  **Custom Monthly Budget** - Set and manage your monthly spending budget
+-  **Live Stats Dashboard**
   - Total spent amount
   - Budget remaining (turns red when over budget)
   - Largest expense at a glance
