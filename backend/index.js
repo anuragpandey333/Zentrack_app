@@ -13,6 +13,7 @@ import analyticsRoutes from './src/routes/analytics.js';
 dotenv.config();
 
 const app = express();
+const PORT = process.env.PORT || 8000;
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
@@ -30,5 +31,11 @@ app.use('/api/user', userRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/analytics', analyticsRoutes);
+
+if (process.env.VERCEL !== '1') {
+    app.listen(PORT, () => {
+        console.log(`Server is running on port ${PORT}`);
+    });
+}
 
 export default app;
