@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { API_URL } from '../config/api';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Layout from '../components/Layout';
@@ -41,8 +42,8 @@ const Reports = () => {
     const fetchData = async () => {
         try {
             const [txRes, budgetRes] = await Promise.all([
-                axios.get('http://localhost:8000/api/transactions', config).catch(() => ({ data: [] })),
-                axios.get('http://localhost:8000/api/budget', config).catch(() => ({ data: { amount: 0 } }))
+                axios.get(`${API_URL}/transactions}`, config).catch(() => ({ data: [] })),
+                axios.get(`${API_URL}/budget}`, config).catch(() => ({ data: { amount: 0 } }))
             ]);
             setTransactions(txRes.data || []);
             setBudget(budgetRes.data.amount || 0);
@@ -150,7 +151,7 @@ const Reports = () => {
         const sortedDates = Object.keys(grouped).sort();
         return sortedDates.map(d => {
             const dateObj = new Date(d);
-            const month = dateObj.toLocaleString('default', { month: 'short' });
+            const month = dateObj.toLocaleString('default`, { month: 'short' });
             const day = dateObj.getDate();
             return {
                 name: `${month} ${day}`,
@@ -369,7 +370,7 @@ const Reports = () => {
 
         try {
             setLoadingAI(true);
-            const { data } = await axios.get('http://localhost:8000/api/reports/ai-insights', config);
+            const { data } = await axios.get(`${API_URL}/reports/ai-insights}`, config);
             setAiInsights(data);
             notificationManager.success('AI insights generated!');
         } catch (error) {

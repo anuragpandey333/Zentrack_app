@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { notificationManager } from '../utils/notifications';
 import { convertCurrency, formatCurrency, getCurrencySymbol } from '../utils/currency';
+import { API_URL } from '../config/api';
 
 const CATEGORIES = ['Housing', 'Food & Dining', 'Transportation', 'Entertainment', 'Shopping', 'Bills', 'Health', 'Other'];
 
@@ -55,7 +56,7 @@ const Transactions = () => {
     const fetchTransactions = async () => {
         try {
             const token = localStorage.getItem('token');
-            const { data } = await axios.get('http://localhost:8000/api/transactions', {
+            const { data } = await axios.get(`${API_URL}/transactions`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setTransactions(data);
@@ -101,7 +102,7 @@ const Transactions = () => {
                 payload.description = formData.description;
             }
             
-            await axios.post('http://localhost:8000/api/transactions', payload, {
+            await axios.post(`${API_URL}/transactions`, payload, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -127,7 +128,7 @@ const Transactions = () => {
     const handleDelete = async (id) => {
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`http://localhost:8000/api/transactions/${id}`, {
+            await axios.delete(`${API_URL}/transactions/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             fetchTransactions();

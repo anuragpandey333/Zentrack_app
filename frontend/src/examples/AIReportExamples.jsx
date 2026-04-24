@@ -1,4 +1,5 @@
 // ============================================
+import { API_URL } from '../config/api';
 // AI FINANCIAL ASSISTANT - IMPLEMENTATION GUIDE
 // ============================================
 
@@ -74,7 +75,7 @@ function DashboardWithAI() {
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:8000/api/ai/analyze', {
+            const response = await fetch(`${API_URL}/ai/analyze`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }

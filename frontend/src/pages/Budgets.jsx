@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { API_URL } from '../config/api';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Layout from '../components/Layout';
@@ -75,8 +76,8 @@ const Budgets = () => {
     const fetchData = async () => {
         try {
             const [txRes, budgetRes] = await Promise.all([
-                axios.get('http://localhost:8000/api/transactions', config).catch(() => ({ data: [] })),
-                axios.get('http://localhost:8000/api/budget', config).catch(() => ({ data: { amount: 0 } }))
+                axios.get(`${API_URL}/transactions}`, config).catch(() => ({ data: [] })),
+                axios.get(`${API_URL}/budget}`, config).catch(() => ({ data: { amount: 0 } }))
             ]);
             const debitTx = txRes.data.filter(t => t.type === 'debit');
             setExpenses(debitTx);

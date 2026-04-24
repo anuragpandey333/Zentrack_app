@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { API_URL } from '../config/api';
 import axios from 'axios';
 
 const UserContext = createContext();
@@ -29,7 +30,7 @@ export const UserProvider = ({ children }) => {
         try {
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
-            const res = await axios.get('http://localhost:8000/api/user/profile', config);
+            const res = await axios.get(`${API_URL}/user/profile}`, config);
             setUser(res.data);
             // Cache in localStorage for instant load
             localStorage.setItem('userProfile', JSON.stringify(res.data));
@@ -47,7 +48,7 @@ export const UserProvider = ({ children }) => {
         try {
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
-            const res = await axios.put('http://localhost:8000/api/user/profile', 
+            const res = await axios.put(`${API_URL}/user/profile', 
                 { picture: photoUrl }, 
                 config
             );
@@ -64,7 +65,7 @@ export const UserProvider = ({ children }) => {
         try {
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
-            const res = await axios.put('http://localhost:8000/api/user/profile', updates, config);
+            const res = await axios.put(`${API_URL}/user/profile', updates, config);
             setUser(res.data);
             localStorage.setItem('userProfile', JSON.stringify(res.data));
             // Force re-fetch to ensure currency is updated

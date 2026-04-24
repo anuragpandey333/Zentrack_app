@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useGoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { API_URL } from '../config/api';
 
 const Login = () => {
     const [name, setName] = useState('');
@@ -20,7 +21,7 @@ const Login = () => {
                     { headers: { Authorization: `Bearer ${tokenResponse.access_token}` } }
                 );
                 
-                const { data } = await axios.post('http://localhost:8000/api/auth/google', {
+                const { data } = await axios.post(`${API_URL}/auth/google`, {
                     credential: tokenResponse.access_token,
                     userInfo: userInfoResponse.data
                 });
@@ -55,7 +56,7 @@ const Login = () => {
         
         const endpoint = isRegister ? 'register' : 'login';
         try {
-            const { data } = await axios.post(`http://localhost:8000/api/auth/${endpoint}`, {
+            const { data } = await axios.post(`${API_URL}/auth/${endpoint}`, {
                 name: isRegister ? name : undefined,
                 email,
                 password

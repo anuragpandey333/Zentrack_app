@@ -7,6 +7,7 @@ import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Toolti
 import { Plus, ChevronDown, MoreHorizontal } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import { convertCurrency, formatCurrency } from '../utils/currency';
+import { API_URL } from '../config/api';
 
 const CATEGORIES = ['Housing', 'Food & Dining', 'Transportation', 'Entertainment', 'Shopping', 'Bills', 'Health', 'Other'];
 // We'll use a grayscale palette to match the minimalist UI
@@ -43,8 +44,8 @@ const Dashboard = () => {
     const fetchData = async () => {
         try {
             const [txRes, budgetRes] = await Promise.all([
-                axios.get('http://localhost:8000/api/transactions', config).catch(() => ({ data: [] })),
-                axios.get('http://localhost:8000/api/budget', config).catch(() => ({ data: { amount: 0 } }))
+                axios.get(`${API_URL}/transactions`, config).catch(() => ({ data: [] })),
+                axios.get(`${API_URL}/budget`, config).catch(() => ({ data: { amount: 0 } }))
             ]);
             
             // Separate income and expenses
@@ -64,7 +65,7 @@ const Dashboard = () => {
     const handleAddExpense = async (e) => {
         e.preventDefault();
         try {
-            await axios.post('http://localhost:8000/api/transactions', { ...form, type: 'debit', amount: parseFloat(form.amount) }, config);
+            await axios.post(`${API_URL}/transactions`, { ...form, type: 'debit', amount: parseFloat(form.amount) }, config);
             setForm({ description: '', amount: '', category: 'Food & Dining', date: new Date().toISOString().split('T')[0] });
             fetchData();
             setShowModal(false);
@@ -76,7 +77,7 @@ const Dashboard = () => {
     const handleAddIncome = async (e) => {
         e.preventDefault();
         try {
-            await axios.post('http://localhost:8000/api/transactions', { 
+            await axios.post(`${API_URL}/transactions`, { 
                 ...incomeForm, 
                 type: 'credit', 
                 amount: parseFloat(incomeForm.amount),
@@ -93,7 +94,7 @@ const Dashboard = () => {
     const handleBudgetUpdate = async (e) => {
         e.preventDefault();
         try {
-            await axios.post('http://localhost:8000/api/budget', { amount: parseFloat(monthlyBudget) }, config);
+            await axios.post(`${API_URL}/budget`, { amount: parseFloat(monthlyBudget) }, config);
             setBudget(parseFloat(monthlyBudget));
             setShowModal(false);
         } catch (error) {
