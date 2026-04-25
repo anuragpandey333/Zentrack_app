@@ -188,7 +188,7 @@ const Login = () => {
                                     <div className="w-full border-t border-slate-200"></div>
                                 </div>
                                 <div className="relative flex justify-center text-xs">
-                                    <span className="px-4 bg-white text-slate-500 font-medium">Or continue with</span>
+                                    <span className="px-4 bg-white text-slate-500 font-medium">OR</span>
                                 </div>
                             </div>
                             
