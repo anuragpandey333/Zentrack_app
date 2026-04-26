@@ -4,7 +4,7 @@ import Layout from '../components/Layout';
 import Header from '../components/Header';
 import { useUser } from '../context/UserContext';
 import { 
-    Plus, Filter, Download, 
+    Plus, Filter, Download, Search,
     ShoppingBag, Briefcase, Tv, Car, 
     RefreshCw, Coffee, Package, Activity,
     X, Trash2, ArrowRightLeft
@@ -45,6 +45,11 @@ const Transactions = () => {
         date: new Date().toISOString().split('T')[0]
     });
     
+    const [showFilter, setShowFilter] = useState(false);
+    const [filterCategory, setFilterCategory] = useState('');
+    const [filterDateFrom, setFilterDateFrom] = useState('');
+    const [filterDateTo, setFilterDateTo] = useState('');
+
     // Pagination
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 8;
@@ -139,17 +144,35 @@ const Transactions = () => {
         }
     };
 
+    const handleExport = () => {
+        const rows = [['Description', 'Category', 'Date', 'Type', 'Amount']]
+            .concat(filteredTransactions.map(t => [
+                t.type === 'transfer' ? `${t.fromBank}${t.toBank ? ` -> ${t.toBank}` : ''}` : (t.description || t.category),
+                t.type === 'transfer' ? 'Transfer' : t.category,
+                new Date(t.date).toLocaleDateString('en-US'),
+                t.type,
+                (t.type === 'credit' ? '+' : t.type === 'transfer' ? '' : '-') + t.amount
+            ]));
+        const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+        a.download = 'transactions.csv';
+        a.click();
+    };
+
     // Filtering
     const filteredTransactions = transactions.filter(t => {
         const matchesSearch = t.description?.toLowerCase().includes(searchTerm.toLowerCase()) || 
                               t.category.toLowerCase().includes(searchTerm.toLowerCase());
-        
         let matchesTab = true;
         if (activeTab === 'Income') matchesTab = t.type === 'credit';
         if (activeTab === 'Expenses') matchesTab = t.type === 'debit';
         if (activeTab === 'Transfers') matchesTab = t.type === 'transfer';
-
-        return matchesSearch && matchesTab;
+        const matchesCategory = !filterCategory || t.category === filterCategory;
+        const tDate = new Date(t.date);
+        const matchesFrom = !filterDateFrom || tDate >= new Date(filterDateFrom);
+        const matchesTo = !filterDateTo || tDate <= new Date(filterDateTo);
+        return matchesSearch && matchesTab && matchesCategory && matchesFrom && matchesTo;
     });
 
     // Pagination Logic
@@ -170,11 +193,11 @@ const Transactions = () => {
                 subtitle="View and manage your recent financial activity."
                 actions={
                     <>
-                        <button className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl text-slate-600 text-sm font-medium hover:bg-slate-50 transition-colors">
+                        <button onClick={() => setShowFilter(v => !v)} className={`flex items-center gap-2 px-4 py-2 border rounded-xl text-sm font-medium transition-colors ${showFilter ? 'bg-slate-900 text-white border-slate-900' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
                             <Filter size={16} />
                             Filter
                         </button>
-                        <button className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl text-slate-600 text-sm font-medium hover:bg-slate-50 transition-colors">
+                        <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl text-slate-600 text-sm font-medium hover:bg-slate-50 transition-colors">
                             <Download size={16} />
                             Export
                         </button>
@@ -188,6 +211,35 @@ const Transactions = () => {
                     </>
                 }
             />
+            {showFilter && (
+                <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-wrap gap-4 items-end">
+                    <div>
+                        <label className="block text-xs font-medium text-slate-500 mb-1.5">Category</label>
+                        <select
+                            value={filterCategory}
+                            onChange={e => { setFilterCategory(e.target.value); setCurrentPage(1); }}
+                            className="px-3 py-2 border border-slate-200 rounded-xl text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-slate-900"
+                        >
+                            <option value="">All Categories</option>
+                            {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-slate-500 mb-1.5">From Date</label>
+                        <input type="date" value={filterDateFrom} onChange={e => { setFilterDateFrom(e.target.value); setCurrentPage(1); }}
+                            className="px-3 py-2 border border-slate-200 rounded-xl text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-slate-900" />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-slate-500 mb-1.5">To Date</label>
+                        <input type="date" value={filterDateTo} onChange={e => { setFilterDateTo(e.target.value); setCurrentPage(1); }}
+                            className="px-3 py-2 border border-slate-200 rounded-xl text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-slate-900" />
+                    </div>
+                    <button onClick={() => { setFilterCategory(''); setFilterDateFrom(''); setFilterDateTo(''); setCurrentPage(1); }}
+                        className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-xl border border-slate-200 transition-colors">
+                        Clear
+                    </button>
+                </div>
+            )}
             <div className="w-full space-y-8">
 
                 {/* Main Content Area */}
@@ -212,15 +264,15 @@ const Transactions = () => {
                                 </button>
                             ))}
                         </div>
-                        <div className="flex items-center gap-3">
-                            <button className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl text-slate-600 text-sm font-medium hover:bg-slate-50 transition-colors">
-                                <Filter size={16} />
-                                Filter
-                            </button>
-                            <button className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl text-slate-600 text-sm font-medium hover:bg-slate-50 transition-colors">
-                                <Download size={16} />
-                                Export
-                            </button>
+                        <div className="relative">
+                            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <input
+                                type="text"
+                                placeholder="Search transactions..."
+                                value={searchTerm}
+                                onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                                className="pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent w-56"
+                            />
                         </div>
                     </div>
 
